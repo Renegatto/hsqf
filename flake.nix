@@ -1,23 +1,26 @@
 {
-  description = "Based on Plutarch 2.0";
   inputs = {
-    plutarch-core.url = "github:Plutonomicon/plutarch-core";
-    tooling.url = "github:mlabs-haskell/mlabs-tooling.nix";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    haskell-flake.url = "github:srid/haskell-flake";
   };
-  outputs = inputs@{ self, tooling, plutarch-core }: tooling.lib.mkFlake { inherit self; }
-    {
-      imports = [
-        (tooling.lib.mkHaskellFlakeModule1 {
-          project.src = ./.;
-          project.shell.withHoogle = true;
-          project.modules = [
-            ({ config, ... }: {
-              packages.plutus-simple-model.doHaddock = false;
-            })
-          ];
-          project.extraHackage = [ "${plutarch-core}" ];
-        })
-      ];
+  outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit self; } {
+      systems = nixpkgs.lib.systems.flakeExposed;
+      imports = [ inputs.haskell-flake.flakeModule ];
+      perSystem = { self', pkgs, ... }: {
+        haskellProjects.default = {
+          packages = { 
+            # You can add more than one local package here.
+            my-package.root = ./.;  # Assumes ./my-package.cabal
+          };
+          # buildTools = hp: { fourmolu = hp.fourmolu; ghcid = null; };
+          # overrides = self: super: { };
+          # hlintCheck.enable = true;
+          # hlsCheck.enable = true;
+        };
+        # haskell-flake doesn't set the default package, but you can do it here.
+        packages.default = self'.packages.my-package;
+      };
     };
-
 }
