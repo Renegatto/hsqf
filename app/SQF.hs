@@ -40,11 +40,6 @@ compileStatement lvl = \case
   -- optional, makes code less ugly, allows nesting
   ExprStat procedure -> compileExpr lvl procedure
 
-  -- where
-  --   block (Procedure stat) =
-  --     "{" <> [nl] <> compileStatement (succ lvl) stat <> "}"
-  --   block definition = compileExpr definition
-
 compileExpr :: Int -> Expression -> String
 compileExpr lvl = \case
   ListLit exprs ->
@@ -57,19 +52,6 @@ compileExpr lvl = \case
   LocalVar varid -> "_" <> varid
   GlobalVar varid -> varid
   Procedure statements -> compileBlock (succ lvl) statements
-
--- _this addEventHandler ["fired", { (_this select 0) setvehicleammo 1} ]; 
-
-{-
->>> compileExpr a
-addEventHandler call (
-  [_this
-  ,"fired"
-  ,{setvehicleammo call ([select call ([_this,0.0]),1.0])}
-  ])
-
-
--}
 
 call :: String -> [Expression] -> Expression
 call varid = Call varid . ListLit
@@ -89,25 +71,7 @@ a =
           )
       ]
     ]
-{-
-private _reg = { 
-  private _arty = vehicle _this; 
-  private _reload = { params ["_unit"]; _unit setvehicleammo 1}; 
-  _arty addEventHandler ["fired",_reload]; 
-}; 
-{_x call _reg} forEach (units this);
--}
 
-{-
->>> compileStatement 0 q
-private _reg = ({
- private _arty = (vehicle (_this));
- private _reload = ({
-   params ([_unit])});
- setvehicleammo call ([1.0])});
-forEach call ([{
- _x call ([_reg])}])"
--}
 a #> b = Seq a b
 expr = ExprStat
 
