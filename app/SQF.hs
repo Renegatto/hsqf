@@ -19,50 +19,132 @@ import Data.List (intercalate)
 nl = '\n'
 eol = [';',nl]
 parens x = "(" <> x <> ")"
-bind ident expr = ident <> " = " <> parens expr <> eol
+bind ident expr = ident <> " = " <> parens expr <> ";"
 
 indent n = replicate n ' '
 
+compileBlock lvl statements =
+  let compile stmt = indent lvl <> compileStatement (succ lvl) stmt
+      compiled = intercalate [nl] $ compile <$> statements
+  in "{" <> [nl] <> compiled <> "}"
+
 compileStatement :: Int -> Statement -> String
 compileStatement lvl = \case
-  SeqStat st0 st1 -> mconcat
-    [ indent lvl, compileStatement lvl st0, eol
-    , indent lvl, compileStatement lvl st1, eol
+  Seq st0 st1 -> mconcat
+    [ compileStatement lvl st0, [nl]
+    , compileStatement lvl st1
     ]
-  LocalStat name definition ->
-    bind ("_" <> name) (compileExpr definition)
-  BindingStat name definition ->
-    bind name (compileExpr definition) 
+  BindLocally name definition ->
+    bind ("private _" <> name) (compileExpr lvl definition)
+  Bind name definition -> bind name (compileExpr lvl definition) 
   -- optional, makes code less ugly, allows nesting
-  ExprStat (ProcedureExpr stat) ->
-    nl : compileStatement (succ lvl) stat
-  ExprStat expr -> compileExpr expr
+  ExprStat procedure -> compileExpr lvl procedure
 
-compileExpr :: Expression -> String
-compileExpr = \case
-  ListLitExpr exprs ->
-    "[" <> intercalate "," (compileExpr <$> exprs) <> "]"
-  NumLitExpr n -> show n
-  StringLitExpr str -> ['"'] <> str <> ['"']
+  -- where
+  --   block (Procedure stat) =
+  --     "{" <> [nl] <> compileStatement (succ lvl) stat <> "}"
+  --   block definition = compileExpr definition
 
-  UnaryOpExpr opVarid arg -> opVarid <> " " <> parens (compileExpr arg)
-  CallExpr fnVarid args -> fnVarid <> " call " <> parens (compileExpr args)
-  LocalIdentExpr varid -> "_" <> varid
-  GlobalIdentExpr varid -> varid
-  ProcedureExpr stat -> compileStatement 0 stat
+compileExpr :: Int -> Expression -> String
+compileExpr lvl = \case
+  ListLit exprs ->
+    "[" <> intercalate "," (compileExpr lvl <$> exprs) <> "]"
+  NumLit n -> show n
+  StringLit str -> ['"'] <> str <> ['"']
+
+  UnaryOperator opVarid arg -> opVarid <> " " <> parens (compileExpr lvl arg)
+  Call fnVarid args -> fnVarid <> " call " <> parens (compileExpr lvl args)
+  LocalVar varid -> "_" <> varid
+  GlobalVar varid -> varid
+  Procedure statements -> compileBlock (succ lvl) statements
+
+-- _this addEventHandler ["fired", { (_this select 0) setvehicleammo 1} ]; 
+
+{-
+>>> compileExpr a
+addEventHandler call (
+  [_this
+  ,"fired"
+  ,{setvehicleammo call ([select call ([_this,0.0]),1.0])}
+  ])
+
+
+-}
+
+call :: String -> [Expression] -> Expression
+call varid = Call varid . ListLit
+
+a :: Expression
+a =
+  call
+    "addEventHandler"
+    [ LocalVar "this"
+    , StringLit "fired"
+    , Procedure
+      [ ExprStat
+          ( call "setvehicleammo"
+              [ call "select" [ LocalVar "this", NumLit 0]
+              , NumLit 1
+              ]
+          )
+      ]
+    ]
+{-
+private _reg = { 
+  private _arty = vehicle _this; 
+  private _reload = { params ["_unit"]; _unit setvehicleammo 1}; 
+  _arty addEventHandler ["fired",_reload]; 
+}; 
+{_x call _reg} forEach (units this);
+-}
+
+{-
+>>> compileStatement 0 q
+private _reg = ({
+ private _arty = (vehicle (_this));
+ private _reload = ({
+   params ([_unit])});
+ setvehicleammo call ([1.0])});
+forEach call ([{
+ _x call ([_reg])}])"
+-}
+a #> b = Seq a b
+expr = ExprStat
+
+q :: Statement
+q =
+  BindLocally "reg"
+    ( Procedure
+        [ BindLocally "arty" 
+            . UnaryOperator "vehicle"
+            $ LocalVar "this"
+        , BindLocally "reload" $
+            Procedure
+              [ expr $ UnaryOperator "params" $ ListLit [LocalVar "unit"]
+              ]
+        , expr $ call "setvehicleammo" [NumLit 1]
+        ]
+  )
+  #> ExprStat
+      ( call "forEach"
+          [ Procedure
+              [ expr $ call "_x" [LocalVar "reg"]
+              ]
+          ]
+      )
 
 data Expression
-  = ListLitExpr [Expression]
-  | NumLitExpr Float
-  | StringLitExpr String
-  | UnaryOpExpr String Expression
-  | CallExpr String Expression
-  | LocalIdentExpr String
-  | GlobalIdentExpr String
-  | ProcedureExpr Statement
+  = ListLit [Expression]
+  | NumLit Float
+  | StringLit String
+  | UnaryOperator String Expression
+  | Call String Expression
+  | LocalVar String
+  | GlobalVar String
+  | Procedure [Statement]
 
 data Statement
-  = SeqStat Statement Statement
+  = Seq Statement Statement
   | ExprStat Expression
-  | LocalStat String Expression
-  | BindingStat String Expression
+  | BindLocally String Expression
+  | Bind String Expression
