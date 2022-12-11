@@ -32,6 +32,7 @@ executable arma
     other-modules:
        HSQF
        SQF
+       TypedSQF
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
