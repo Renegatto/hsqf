@@ -15,15 +15,19 @@
         haskellProjects.default = {
           packages = { 
             # You can add more than one local package here.
-            my-package.root = ./.;  # Assumes ./my-package.cabal
+            arma.root = ./.;  # Assumes ./my-package.cabal
           };
-          # buildTools = hp: { fourmolu = hp.fourmolu; ghcid = null; };
+          buildTools = hp:
+            { fourmolu = hp.fourmolu;
+              ghcid = null;
+              
+            };
           # overrides = self: super: { };
           # hlintCheck.enable = true;
           # hlsCheck.enable = true;
         };
         # haskell-flake doesn't set the default package, but you can do it here.
-        packages.default = self'.packages.my-package;
+        packages.default = self'.packages.arma;
       };
     };
 }
