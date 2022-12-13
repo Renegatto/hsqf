@@ -13,11 +13,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase #-}
-module USQF  (SQF(..)) where
+module USQF (SQF(..)) where
 import Data.Kind (Type)
 import Data.List (intercalate)
 import SQF qualified (Statement)
 
+-- | Untyped (lmao) SQF language
 data SQF
   = ListLit [SQF]
   | NumLit Float

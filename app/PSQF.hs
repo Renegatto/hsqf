@@ -5,25 +5,38 @@ import PSQF.Definition
 import PSQF.HList
 import USQF (SQF(GlobalVar))
 
-currentvehiclespeed :: Term s ('[PInteger,PInteger] :==> PInteger)
+currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
 currentvehiclespeed =
   MkTerm $ \_ -> GlobalVar "currentvehiclespeed"
 
-gc = g # psingleton (pconstant @Integer 1)
+gc = gCorrect # psingleton (pconstant @Integer 1)
 
-g :: Term s ('[PInteger] :==> PInteger)
-g = plam @'[PInteger] $ \(MkFlip x) ->
-  let q0 = sel @0 $ toHList q
-  in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
+gCorrect :: Term Stat s ('[PInteger] :==> PInteger)
+gCorrect = plam @'[PInteger] $ \(MkFlip x) ->
+  plet (pconstant @Integer 12) $ \n -> 
+    let q = pcon $ MkPPair n n
+        q0 = sel @0 $ toHList q
+    in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
 
-q = undefined :: Term s (PPair PInteger PInteger)--plet (pconstant @Integer 12) $ \n -> pcon $ MkPPair n n
+
+-- g :: Term Stat s ('[PInteger] :==> PInteger)
+-- g = plam @'[PInteger] $ \(MkFlip x) ->
+--   let q0 = sel @0 $ toHList q
+--   in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
+
+q :: Term Stat s (PPair PInteger PInteger)
+q = plet (pconstant @Integer 12) $ \n -> pcon $ MkPPair n n
 
 {-
 
-THE 'LET' is impossible, BOY :(
+THE expr 'LET' is impossible, BOY :(
 
 >>> runTerm gc 0
-Call (Procedure [Call (GlobalVar "params") (ListLit [LocalVar "var0"]),Call (GlobalVar "currentvehiclespeed") (ListLit [BinaryOperator "+" (Call (GlobalVar "select") (ListLit [NumLit 0.0,Seq (BindLocally "var1" (NumLit 12.0)) (ListLit [LocalVar "var1",LocalVar "var1"])])) (LocalVar "var0"),LocalVar "var0"])]) (ListLit [NumLit 1.0])
+{ params call [_var0];
+  private _var1 = 12;
+  currentvehiclespeed call [(select call [0,[_var1,_var1]]) + _var0,_var0];
+} call [1];
+
 
 { params call [_var0];
   currentvehiclespeed call
@@ -45,8 +58,8 @@ Call (Procedure [Call (GlobalVar "params") (ListLit [LocalVar "var0"]),Call (Glo
 
 >>> q 0
 Couldn't match expected type: t0 -> t
-            with actual type: Term s0 (PPair PInteger PInteger)
-
+Couldn't match expected type: t0 -> t
+            with actual type: Term 'Stat s0 (PPair PInteger PInteger)
 -}
 
   -- Constant :: forall (a :: Type) s. Lift a => a -> SQF s (Lifted a)
