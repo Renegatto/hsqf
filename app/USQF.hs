@@ -13,12 +13,23 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase #-}
-module TypedSQF  () where
+module USQF  (SQF(..)) where
 import Data.Kind (Type)
 import Data.List (intercalate)
 import SQF qualified (Statement)
 
-data Statement a where
-
-compile :: Statement a -> SQF.Statement
-compile = undefined
+data SQF
+  = ListLit [SQF]
+  | NumLit Float
+  | StringLit String
+  | UnaryOperator String SQF
+  | BinaryOperator String SQF SQF
+  | Call SQF SQF
+  | LocalVar String
+  | GlobalVar String
+  | Procedure [SQF]
+  | Seq SQF SQF
+  | BindLocally String SQF
+  | Bind String SQF
+  | If SQF SQF SQF
+  deriving Show
