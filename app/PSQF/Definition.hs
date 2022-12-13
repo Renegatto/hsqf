@@ -47,9 +47,10 @@ newtype (:==>) args b s = MkProcedure
 f ## x = MkTerm $ \lvl ->
   Call (runTerm f lvl) (runTerm x lvl)
 
-class PConstant a where
-  type PConst a :: PType
-  pconstant :: a -> Term s (PConst a)
+class PConstant pa where
+  type PConst a :: Type
+  type PUnConst pa :: Type
+  pconstant :: PUnConst a -> Term c s pa
 
 class PCon (a :: PType) where 
   pcon :: a s -> Term c s a
@@ -72,9 +73,9 @@ instance PCon PInteger where
   pcon :: PInteger s -> Term c s PInteger
   pcon n = unExpr $ runPInteger n
 
-instance PConstant Integer where
-  type PConst Integer = PInteger
-  pconstant :: Integer -> Term c s (PConst Integer)
+instance PConstant PInteger where
+  type PUnConst PInteger = Integer
+  pconstant :: Integer -> Term c s PInteger
   pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
 
 (#&&) :: Term Expr s PBool -> Term Expr s PBool -> Term c s PBool
