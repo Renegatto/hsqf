@@ -32,6 +32,8 @@ executable arma
     other-modules:
        HSQF
        PSQF
+       PSQF.HList
+       PSQF.Definition
        SQF
        USQF
 
