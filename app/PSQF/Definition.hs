@@ -74,15 +74,46 @@ instance PConstant Integer where
   pconstant :: Integer -> Term s (PConst Integer)
   pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
 
+(#&&) :: Term s PBool -> Term s PBool -> Term s PBool
+(#&&) = declareOperator "&&"
+
+(#||) :: Term s PBool -> Term s PBool -> Term s PBool
+(#||) = declareOperator "||"
+
+pnot :: Term s PBool -> Term s PBool
+pnot = declareUnary "not"
+
+(#==) :: POrd a => Term s a -> Term s a -> Term s PBool
+a #== b = (a #>= b) #&& (a #<= b)
+
+(#>) :: POrd a => Term s a -> Term s a -> Term s PBool
+a #> b = (a #>= b) #&& pnot (a #== b)
+
+class POrd (a :: PType) where
+  {-# MINIMAL (#>=), (#<=) #-}
+  (#>=) :: Term s a -> Term s a -> Term s PBool
+  (#<=) :: Term s a -> Term s a -> Term s PBool
+
+instance POrd (a :: PType) where
+   (#>=) :: Term s a -> Term s a -> Term s PBool
+   (#>=) = declareOperator ">="
+
+   (#<=) :: Term s a -> Term s a -> Term s PBool
+   (#<=) = declareOperator ">="
+
 instance Num (Term s PInteger) where
   (+) :: Term s PInteger -> Term s PInteger -> Term s PInteger
-  (+) = binop "+"
+  (+) = declareOperator "+"
   (-) :: Term s PInteger -> Term s PInteger -> Term s PInteger
-  (-) = binop "-"
+  (-) = declareOperator "-"
   (*) :: Term s PInteger -> Term s PInteger -> Term s PInteger
-  (*) = binop "*"
+  (*) = declareOperator "*"
   fromInteger :: Integer -> Term s PInteger
   fromInteger = pconstant
+  abs :: Term s PInteger -> Term s PInteger
+  abs a = pif (a #>= 0) a (negate a)
+  signum :: Term s PInteger -> Term s PInteger
+  signum a = pif (a #> 0) 1 (pif (a #== 0) 0 (-1))
 
 type PBool :: PType
 data PBool s = PTrue | PFalse
@@ -90,9 +121,13 @@ data PBool s = PTrue | PFalse
 mkVar :: Int -> String
 mkVar = mappend "var" . show
 
-binop op a b =
-  MkTerm $ \lvl ->
-    BinaryOperator
-    op
-    (runTerm a lvl)
-    (runTerm b lvl)
+declareGlobal :: forall a s. String -> Term s a
+declareGlobal varid = MkTerm $ \_ -> GlobalVar varid
+
+declareUnary :: forall a b s. String -> Term s a -> Term s b
+declareUnary varid x = MkTerm $ \lvl ->
+  UnaryOperator varid (runTerm x lvl)
+
+declareOperator :: forall a b c s. String -> Term s a -> Term s b -> Term s c
+declareOperator varid x y = MkTerm $ \lvl ->
+  BinaryOperator varid (runTerm x lvl) (runTerm y lvl)
