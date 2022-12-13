@@ -16,6 +16,9 @@
 module HSQF where
 import Data.Kind (Type)
 import Data.List (intercalate)
+import qualified SQF
+import SQF (Statement(BindLocally))
+
 data S
 type SType = S -> Type
 
@@ -27,6 +30,7 @@ data SVoid (s :: S) = MkVoid
 newtype SVehicle (s :: S) = MkSVehicle (SObject s)
 data SInteger (s :: S) = MkSInteger
 
+-- | SQF Procedure
 type (:-->) :: SType -> SType -> SType
 data (:-->) a b s = MkArrow  
 
@@ -43,14 +47,31 @@ data SQF (s :: S) (a :: SType) where
   SCon :: forall s (a :: SType). a s -> SQF s a
   BuiltinFn :: forall s a b. String -> SQF s (a :--> b)
   Procedure :: forall a b s. (forall s. SQF s a -> SQF s b) -> SQF s (a :--> b)
-  Call :: forall a b s. (forall s. SQF s (a :--> b)) -> SQF s a -> SQF s b  
+  Call :: forall a b s. (forall s0. SQF s0 (a :--> b)) -> SQF s a -> SQF s b  
 
-data SQFLang l where
-  Seq :: SQFLang a -> SQFLang b -> SQFLang b
+mkVar :: Int -> String
+mkVar = mappend "var" . show
 
+compileExpr :: Int -> SQF s a -> Maybe SQF.Expression
+compileExpr = undefined
 
-compile :: SQF s a -> SQFLang l
-compile = undefined
+j :: forall (s :: S). SQF s (SInteger ::: SInteger)
+j = Let (BuiltinFn "foo" # Constant @Integer 3) $ \x -> spair x x
+
+-- compile :: Int -> SQF s a -> Maybe SQF.Statement
+-- compile argN = \case
+--   Let def scope -> do
+--     compiledDef <- compileExpr (succ argN) def
+--     continuation <- compile (succ argN) (scope )
+--     let binding = BindLocally (mkVar argN) compiledDef
+--     pure $ binding SQF.#> continuation
+
+--   Constant a -> _
+--   Downcast sqf -> _
+--   SCon as -> _
+--   BuiltinFn s -> _
+--   Procedure x0 -> _
+--   Call x0 sqf -> _
 
 (#) :: forall {s :: S} {a :: SType} {b :: SType}.
   (forall s'. SQF s' (a :--> b)) -> SQF s a -> SQF s b
