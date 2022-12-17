@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 import PSQF.Definition
 import PSQF.HList
 import USQF (SQF(GlobalVar))
@@ -9,11 +10,12 @@ currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
 currentvehiclespeed =
   MkTerm $ \_ -> GlobalVar "currentvehiclespeed"
 
+gc :: Term c s PInteger
 gc = gCorrect # psingleton (pconstant @Integer 1)
 
 gCorrect :: Term Stat s ('[PInteger] :==> PInteger)
-gCorrect = plam @'[PInteger] $ \(MkFlip x) ->
-  plet (pconstant @Integer 12) $ \n -> 
+gCorrect = plam $ \(MkFlip x) ->
+  plet (pconstant 12) $ \n -> 
     let q = pcon $ MkPPair n n
         q0 = sel @0 $ toHList q
     in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
@@ -25,17 +27,14 @@ gCorrect = plam @'[PInteger] $ \(MkFlip x) ->
 --   in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
 
 q :: Term Stat s (PPair PInteger PInteger)
-q = plet (pconstant @Integer 12) $ \n -> pcon $ MkPPair n n
+q = plet (pconstant 12) $ \n -> pcon $ MkPPair n n
 
 {-
 
 THE expr 'LET' is impossible, BOY :(
 
 >>> runTerm gc 0
-{ params call [_var0];
-  private _var1 = 12;
-  currentvehiclespeed call [(select call [0,[_var1,_var1]]) + _var0,_var0];
-} call [1];
+Call (Procedure [Call (GlobalVar "params") (ListLit [LocalVar "var0"]),Seq (BindLocally "var1" (NumLit 12.0)) (Call (GlobalVar "currentvehiclespeed") (ListLit [BinaryOperator "+" (Call (GlobalVar "select") (ListLit [NumLit 0.0,ListLit [LocalVar "var1",LocalVar "var1"]])) (LocalVar "var0"),LocalVar "var0"]))]) (ListLit [NumLit 1.0])
 
 
 { params call [_var0];
@@ -57,7 +56,6 @@ THE expr 'LET' is impossible, BOY :(
 } call [1]
 
 >>> q 0
-Couldn't match expected type: t0 -> t
 Couldn't match expected type: t0 -> t
             with actual type: Term 'Stat s0 (PPair PInteger PInteger)
 -}

@@ -47,13 +47,17 @@ newtype (:==>) args b s = MkProcedure
 f ## x = MkTerm $ \lvl ->
   Call (runTerm f lvl) (runTerm x lvl)
 
-class PConstant a where
-  type PConst a :: PType
-  pconstant :: a -> Term s (PConst a)
+-- We need two classes for better type inference
+class (PLifted (PConstanted a) ~ a) => PConstant (a :: Type) where
+  type PConstanted a :: PType
+  pconstant :: a -> Term c s (PConstanted a)
+
+class (PConstanted (PLifted pa) ~ pa) => PLift (pa :: PType) where
+  type PLifted pa :: Type
 
 class PCon (a :: PType) where 
   pcon :: a s -> Term c s a
-
+ 
 class PMatch (a :: PType) where
   type PPattern a :: PType
   match :: Term Expr s a -> (PPattern a s -> Term c s b) -> Term c s b
@@ -68,13 +72,17 @@ pif b success failure = MkTerm $ \lvl ->
 type PInteger :: PType
 newtype PInteger s = MkInteger { runPInteger :: Term Expr s PInteger }
 
+_ = pconstant 2 :: Term c s PInteger
+
 instance PCon PInteger where
   pcon :: PInteger s -> Term c s PInteger
   pcon n = unExpr $ runPInteger n
 
+instance PLift PInteger where type PLifted PInteger = Integer
+
 instance PConstant Integer where
-  type PConst Integer = PInteger
-  pconstant :: Integer -> Term c s (PConst Integer)
+  type PConstanted Integer = PInteger
+  pconstant :: Integer -> Term c s (PConstanted Integer)
   pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
 
 (#&&) :: Term Expr s PBool -> Term Expr s PBool -> Term c s PBool

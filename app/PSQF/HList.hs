@@ -136,11 +136,14 @@ f # x = MkTerm $ \lvl ->
   Call (runTerm f lvl) (runTerm x lvl)
 
 newtype PHList (xs :: [PType]) s = MkHList
-  { runHList :: Term Expr s (PHList xs)} 
+  { runHList :: Term Expr s (PHList xs)}
+
+instance (PLift pa, PLift pb) => PLift (PHList '[pa,pb]) where
+  type PLifted (PHList '[pa,pb]) = (PLifted pa,PLifted pb)
 
 instance (PConstant a, PConstant b) => PConstant (a,b) where
-  type PConst (a,b) = PHList '[PConst a, PConst b]
-  pconstant :: (PConstant a, PConstant b) => (a, b) -> Term c s (PConst (a, b))
+  type PConstanted (a,b) = PHList '[PConstanted a, PConstanted b]
+  pconstant :: (PConstant a, PConstant b) => (a, b) -> Term c s (PConstanted (a, b))
   pconstant (a,b) = ppairList (pconstant a) (pconstant b)
 
 
@@ -161,10 +164,9 @@ sel ::
   KnownNat n =>
   Term Expr s (PHList xs) ->
   Term c s (Nth n xs)
-sel xs =
-    select @xs @(Nth n xs) ## ppairList (pconstant @Integer index) xs
+sel xs = select ## ppairList (pconstant @Integer index) xs
   where
-      index = fromIntegral $ natVal $ Proxy @n
+    index = fromIntegral $ natVal $ Proxy @n
 
 getFst :: forall c s a b. Term Expr s (PHList '[a,b]) -> Term c s a
 getFst = sel @0
