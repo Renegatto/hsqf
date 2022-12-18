@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               arma
 version:            0.1.0.0
 
@@ -27,7 +27,11 @@ extra-source-files: CHANGELOG.md
 
 executable arma
     main-is:          Main.hs
-
+    default-extensions:
+      NoFieldSelectors
+      NoStarIsType
+      BangPatterns
+      OverloadedRecordDot
     -- Modules included in this executable, other than Main.
     other-modules:
        HSQF
@@ -35,6 +39,7 @@ executable arma
        PSQF.HList
        PSQF.Definition
        PSQF.Monadic
+       PSQF.Api
        SQF
        USQF
 
