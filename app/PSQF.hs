@@ -2,9 +2,16 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QualifiedDo #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 import PSQF.Definition
 import PSQF.HList
-import USQF (SQF(GlobalVar))
+import USQF (SQF(GlobalVar),compile)
+import qualified PSQF.Monadic as P
+import PSQF.Api
 
 currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
 currentvehiclespeed =
@@ -29,13 +36,46 @@ gCorrect = plam $ \(MkFlip x) ->
 q :: Term Stat s (PPair PInteger PInteger)
 q = plet (pconstant 12) $ \n -> pcon $ MkPPair n n
 
+player = declareGlobal "this" :: Term Expr s PPlayer
+
+z :: Term c s (PList PUnit)
+z = units ## player
+
+type family Mono (a :: k) (xs :: [k]) :: Bool where
+  Mono _ '[] = 'True
+  Mono a (a:xs) = Mono a xs
+
+forEachH :: Mono a xs ~ True => Term c s ('[a :--> b, PHList xs] :==> b)
+forEachH = declareGlobal "forEach"
+
+forEach :: Term c s ('[ '[a] :==> b, PList a] :==> PList b)
+forEach = declareGlobal "forEach"
+
+--template :: forall s a. Term 'Expr s PPlayer -> Term 'Stat s a
+template :: forall c s. Term Expr s PPlayer -> Term c s (PList PBool)
+template this = --P.do
+  let reg :: Term Expr s ('[PUnit] :==> PBool) 
+      reg = plet $ plam $ \arty unit -> P.do
+        undefined
+  in forEach # (reg #: (units ## this) #: pnil :: Term c' s (PHList '[ '[PUnit] :==> PBool, PList PUnit]))
+
+
 {-
 
 THE expr 'LET' is impossible, BOY :(
 
+private _reg = {
+  params ["_arty","_unit",];
+  private _reload = { _unit setvehicleammo 1}; 
+  _arty addEventHandler ["fired",_reload]; 
+}; 
+{_x call _reg} forEach (units this);
+
+
+>>> compile 0 $ runTerm gc 0
+"({\n (params) call ([_var0]);\n private _var1 = (12.0);\n  (currentvehiclespeed) call ([((select) call ([0.0,[_var1,_var1]])) + (_var0),_var0]);\n}) call ([1.0])"
 >>> runTerm gc 0
 Call (Procedure [Call (GlobalVar "params") (ListLit [LocalVar "var0"]),Seq (BindLocally "var1" (NumLit 12.0)) (Call (GlobalVar "currentvehiclespeed") (ListLit [BinaryOperator "+" (Call (GlobalVar "select") (ListLit [NumLit 0.0,ListLit [LocalVar "var1",LocalVar "var1"]])) (LocalVar "var0"),LocalVar "var0"]))]) (ListLit [NumLit 1.0])
-
 
 { params call [_var0];
   currentvehiclespeed call
