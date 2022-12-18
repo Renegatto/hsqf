@@ -85,6 +85,22 @@ instance PConstant Integer where
   pconstant :: Integer -> Term c s (PConstanted Integer)
   pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
 
+type PString :: PType
+newtype PString s = MkString { runPString :: Term Expr s PString }
+
+_ = pconstant "foo" :: Term c s PString
+
+instance PCon PString where
+  pcon :: PString s -> Term c s PString
+  pcon n = unExpr $ runPString n
+
+instance PLift PString where type PLifted PString = String
+
+instance PConstant String where
+  type PConstanted String = PString
+  pconstant :: String -> Term c s (PConstanted String)
+  pconstant s = MkTerm $ \_ -> StringLit s
+
 (#&&) :: Term Expr s PBool -> Term Expr s PBool -> Term c s PBool
 (#&&) = declareOperator "&&"
 
@@ -129,8 +145,16 @@ instance Num (Term Expr s PInteger) where
 type PBool :: PType
 data PBool s = PTrue | PFalse
 
+instance PCon PBool where
+  pcon :: PBool s -> Term c s PBool
+  pcon PTrue = MkTerm $ \_ -> GlobalVar "true"
+  pcon PFalse = MkTerm $ \_ -> GlobalVar "false"
+
 mkVar :: Int -> String
 mkVar = mappend "var" . show
+
+ptraceError :: Term Expr s PString -> Term c s a
+ptraceError = declareUnary "throw"
 
 declareGlobal :: forall a c s. String -> Term c s a
 declareGlobal varid = MkTerm $ \_ -> GlobalVar varid
