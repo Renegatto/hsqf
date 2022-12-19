@@ -83,8 +83,9 @@ instance MatchArgs '[] b s where
       , runTerm result lvl
       ]
 
-u = pprocedure @PInteger @'[PInteger,PString,PBool] $ \a b c -> a
+inferenceExample = pprocedure @PInteger @'[PInteger,PString,PBool] $ \a b c ->
+  a -- inferred
 
-u' :: _
-u' = pprocedure @PBool $
+reverseInferenceExample :: _
+reverseInferenceExample = pprocedure @PBool {- args type inferred -} $
   \(a :: Term Expr x PInteger) (b :: Term Expr x PBool) (c :: Term Expr x PString) -> b

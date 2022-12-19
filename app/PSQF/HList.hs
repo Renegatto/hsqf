@@ -207,11 +207,11 @@ x #: xs = pcons x xs
 
 infixr 5 #:
 
-exampleList :: Term Expr s (PHList '[PInteger,PBool,PString])
-exampleList = pconstant 4 #: pcon PTrue #: pconstant "214" #: pnil
-
 var :: Int -> SQF
 var = LocalVar . mkVar
 
 term :: SQF -> Term c s a
 term = MkTerm . const
+
+exampleList :: Term Expr s (PHList '[PInteger,PBool,PString])
+exampleList = pconstant 4 #: pcon PTrue #: pconstant "214" #: pnil
