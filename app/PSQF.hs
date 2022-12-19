@@ -12,6 +12,7 @@ import PSQF.HList
 import USQF (SQF(GlobalVar),compile)
 import qualified PSQF.Monadic as P
 import PSQF.Api
+import PSQF.Procedure (pprocedure)
 
 currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
 currentvehiclespeed =
@@ -45,11 +46,13 @@ forEach :: Term c s ('[ '[a] :==> b, PList a] :==> PList b)
 forEach = declareGlobal "forEach"
 
 template :: forall c s. Term Expr s PPlayer -> Term c s (PList PBool)
-template this = --P.do
+template this = P.do
   let reg :: Term Expr s ('[PUnit] :==> PBool) 
-      reg = plet $ plam $ \arty unit -> P.do
-        undefined
-  in forEach # (reg #: (units ## this) #: pnil :: Term c' s (PHList '[ '[PUnit] :==> PBool, PList PUnit]))
+      reg = pprocedure $ \arty -> undefined
+
+      args :: Term c' s (PHList '[ '[PUnit] :==> PBool, PList PUnit])
+      args = reg #: (units ## this) #: pnil
+  forEach # args
 
 
 {-
