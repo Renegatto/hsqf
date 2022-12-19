@@ -42,13 +42,6 @@ plet def scope = MkTerm $ \lvl ->
 type PTup3 :: PType -> PType -> PType -> PType
 data PTup3 a b d s = MkTup3 (Term Expr s a) (Term Expr s b) (Term Expr s d)
 
--- plam' :: (Term c s a -> Term c s b) -> Term c s (a :--> b)
--- plam' f = MkTerm $ \lvl ->
---   let var = LocalVar $ mkVar lvl
---   in Procedure
---     [ Call (GlobalVar "params") $ ListLit [var]
---     , runTerm (f (MkTerm $ const var)) (succ lvl)
---     ]
 type Flip :: (a -> b -> Type) -> b -> a -> Type
 newtype Flip f a b = MkFlip (f b a)
 
@@ -148,7 +141,6 @@ instance (PConstant a, PConstant b) => PConstant (a,b) where
   pconstant :: (PConstant a, PConstant b) => (a, b) -> Term c s (PConstanted (a, b))
   pconstant (a,b) = ppairList (pconstant a) (pconstant b)
 
-
 psingleton :: Term c s a -> Term c s (PHList '[a])
 psingleton x = MkTerm $ \lvl ->
   ListLit [runTerm x lvl]
@@ -194,15 +186,8 @@ type family Nth n (xs :: [k]) where
   Nth 0 (x:xs) = x
   Nth n (_:xs) = Nth (n - 1) xs 
 
+type PForgetTerm :: Scope -> PType
 data PForgetTerm c s = forall a. MkPForgetTerm {recallTerm :: Term c s a}
-
--- class MultiLam (f :: Type) where
---   type UnLam f 
---   mlam :: f -> Term s (UnLam f)
-
--- instance MultiLam f where
---   type UnLam f 
---   mlam :: (Term Expr s a -> f) -> Term Expr s a -> UnLam f
 
 type family (xs :: [k]) :++: (ys :: [k]) :: [k] where
   '[] :++: ys = ys
@@ -222,87 +207,11 @@ x #: xs = pcons x xs
 
 infixr 5 #:
 
-q :: Term Expr s (PHList '[PInteger,PBool,PString])
-q = pconstant 4 #: pcon PTrue #: pconstant "214" #: pnil
+exampleList :: Term Expr s (PHList '[PInteger,PBool,PString])
+exampleList = pconstant 4 #: pcon PTrue #: pconstant "214" #: pnil
 
-data TermsList xs s where
-  Nil :: TermsList '[] s
-  Cons :: Term Expr s x -> TermsList xs s -> TermsList (x:xs) s
-
-
-{-
-
-  plam' ::
-    (forall s. PTup3 a b c s -> Term e s d) ->
-    Term e s ('[a,b,c] :==> d)
-  plam' f = MkTerm $ \lvl ->
-    let var = LocalVar . mkVar
-        var0 = var lvl
-        var1 = var (lvl + 1)
-        var2 = var (lvl + 2)
-        term = MkTerm . const
-    in Procedure
-      [ Call (GlobalVar "params") $ ListLit [var0,var1,var2]
-      , runTerm (f (MkTup3 (term var0) (term var1) (term var2))) (succ lvl)
-      ]
-
--}
+var :: Int -> SQF
 var = LocalVar . mkVar
+
+term :: SQF -> Term c s a
 term = MkTerm . const
-
-nextArg0 :: Int -> [String] -> Term Expr s b -> Term c s b
-nextArg0 lvl vars f = MkTerm $ \lvl ->
-  Procedure
-      [ Call (GlobalVar "params") $ ListLit (LocalVar <$> vars)
-      , runTerm f lvl
-      ]
-
-nextArg1 :: forall f s x. Int -> [String] -> (Term Expr s x -> f) -> f
-nextArg1 lvl vars f =
-  let f' :: f
-      f' = f $ term $ var lvl
-  in nextArg1 (succ lvl) (mkVar lvl : vars) f
-
-type family ResultOf (args :: [PType]) :: PType where
-  ResultOf '[a] = a
-  ResultOf (_:xs) = ResultOf xs
-
-type family UnLambdaOf (args :: [PType]) c (s :: S) :: Type where
-  UnLambdaOf '[a] c s = Term c s a
-  UnLambdaOf (x:xs) c s = Term Expr s x -> UnLambdaOf xs c s
-
-plamm ::
-  forall args c (s :: S) (b :: PType) f.
-  ( b ~ ResultOf args
-  , f ~ (forall x. UnLambdaOf args c x)
-  , forall x. f ~ Next args b x
-  , forall x. MatchArgs args b x
-  ) =>
-  (forall x. UnLambdaOf args c x) -> Term c s (args :==> b)
-plamm f =
-  let q :: forall s'. Term c s (args :==> b)
-      q = MkTerm $ \lvl -> sqf Proxy lvl
-      sqf :: forall (s' :: S). Proxy s' -> Int -> SQF
-      sqf (Proxy :: Proxy s') lvl = nextArg @args @b @s' lvl [] (f :: forall x. UnLambdaOf args c x)
-
-  in undefined
-
-type MatchArgs :: [PType] -> PType -> S -> Constraint
-class MatchArgs xs b s where
-  type Next xs b s
-  nextArg :: Int -> [String] -> Next xs b s -> SQF
-
-instance MatchArgs xs b s => MatchArgs (x:xs) b s where
-  type Next (x:xs) b s = (Term Expr s x -> Next xs b s)
-  nextArg :: Int -> [String] -> (Term Expr s x -> Next xs b s) -> SQF
-  nextArg lvl vars f =
-    nextArg @xs @b @s (succ lvl) (mkVar lvl : vars) (f $ term $ var lvl)
-
-instance MatchArgs '[] b s where
-  type Next '[] b s = Term Expr s b
-  nextArg :: Int -> [String] -> Term Expr s b -> SQF
-  nextArg lvl vars result =
-    Procedure
-      [ Call (GlobalVar "params") $ ListLit (LocalVar <$> vars)
-      , runTerm result lvl
-      ]
