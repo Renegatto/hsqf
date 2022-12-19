@@ -39,6 +39,7 @@ executable arma
        PSQF.HList
        PSQF.Definition
        PSQF.Monadic
+       PSQF.Procedure
        PSQF.Api
        SQF
        USQF
