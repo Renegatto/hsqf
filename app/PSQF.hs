@@ -41,17 +41,9 @@ player = declareGlobal "this" :: Term Expr s PPlayer
 z :: Term c s (PList PUnit)
 z = units ## player
 
-type family Mono (a :: k) (xs :: [k]) :: Bool where
-  Mono _ '[] = 'True
-  Mono a (a:xs) = Mono a xs
-
-forEachH :: Mono a xs ~ True => Term c s ('[a :--> b, PHList xs] :==> b)
-forEachH = declareGlobal "forEach"
-
 forEach :: Term c s ('[ '[a] :==> b, PList a] :==> PList b)
 forEach = declareGlobal "forEach"
 
---template :: forall s a. Term 'Expr s PPlayer -> Term 'Stat s a
 template :: forall c s. Term Expr s PPlayer -> Term c s (PList PBool)
 template this = --P.do
   let reg :: Term Expr s ('[PUnit] :==> PBool) 
