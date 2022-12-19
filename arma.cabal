@@ -28,10 +28,8 @@ extra-source-files: CHANGELOG.md
 executable arma
     main-is:          Main.hs
     default-extensions:
-      NoFieldSelectors
       NoStarIsType
       BangPatterns
-      OverloadedRecordDot
     -- Modules included in this executable, other than Main.
     other-modules:
        HSQF
