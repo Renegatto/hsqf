@@ -90,6 +90,23 @@ newtype PString s = MkString { runPString :: Term Expr s PString }
 
 _ = pconstant "foo" :: Term c s PString
 
+type PVoid :: PType
+newtype PVoid s = MkPVoid { runPVoid :: Term Expr s PVoid }
+
+instance PCon PVoid where
+  pcon :: PVoid s -> Term c s PVoid
+  pcon n = unExpr $ runPVoid n
+
+instance PLift PVoid where type PLifted PVoid = ()
+
+instance PConstant () where
+  type PConstanted () = PVoid
+  pconstant :: () -> Term c s (PConstanted ())
+  pconstant _ = MkTerm $ \_ -> StringLit []
+
+
+_ = pconstant () :: Term c s PVoid
+
 instance PCon PString where
   pcon :: PString s -> Term c s PString
   pcon n = unExpr $ runPString n
