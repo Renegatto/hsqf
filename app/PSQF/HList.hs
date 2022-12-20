@@ -29,6 +29,8 @@ import GHC.TypeLits (natVal)
 import Data.Data (Proxy(Proxy))
 import GHC.Base (Constraint)
 
+-- FIXME: 'params' must be called with String literals, not with vars identifiers
+
 type PPair :: PType -> PType -> PType
 data PPair a b s = MkPPair (Term Expr s a) (Term Expr s b)
 

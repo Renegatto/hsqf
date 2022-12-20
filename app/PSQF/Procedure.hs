@@ -68,7 +68,7 @@ instance MatchArgs '[] b c s where
   nextArg :: Int -> [String] -> Term c s b -> SQF
   nextArg lvl vars result =
     Procedure
-      [ Call (GlobalVar "params") $ ListLit (LocalVar <$> vars)
+      [ Call (GlobalVar "params") $ ListLit (StringLit <$> vars)
       , runTerm result lvl
       ]
 
