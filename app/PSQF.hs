@@ -51,29 +51,44 @@ setvehicleammo :: Term c s ('[PVehicle, PInteger] :==> PVoid)
 setvehicleammo = declareGlobal "setvehicleammo"
 
 addEventHandler ::
-  forall a c s. PSubtype a PObject => Term c s ('[ '[a] :==> PVoid, a] :==> PVoid)
+  forall a c s. PSubtype a PObject => Term c s ('[a, PEvent, '[a] :==> PVoid] :==> PVoid)
 addEventHandler = declareGlobal "addEventHandler"
 
-template :: forall c s. Term Expr s PPlayer -> Term c s (PList PBool)
+template :: forall c s. Term Expr s PPlayer -> Term Stat s (PList PVoid)
 template this = P.do
-  let reg :: forall z. Term Stat z ('[PUnit] :==> PBool) 
-      reg = pprocedure @PVoid $ \arty -> P.do 
-        let rel :: forall x. Term Expr x ('[PVehicle] :==> PVoid)
-            rel = pprocedure @PVoid @_ @Expr @x $ \vehicle ->
-              setvehicleammo # (vehicle #: pconstant @Integer 1 #: pnil)
-            veh :: Term Expr z PVehicle
-            veh = undefined
-        veh' <- plet $ (undefined :: Term Expr z PVehicle)
-        addEventHandler @PVehicle # (rel #: veh #: pnil)
-        --reload <- plet rel
-        -- (undefined :: Term _ _ PBool)
-      args :: Term c' s (PHList '[ '[PUnit] :==> PVoid, PList PUnit])
-      args = reg #: (units ## this) #: pnil
-  forEach # args
+  reg <- plet $ pprocedure @PVoid $ \arty -> P.do
+    reloadAmmo <- plet $ pprocedure @PVoid $ \vehicle ->
+      setvehicleammo # (vehicle #: pconstant @Integer 1 #: pnil)
+    veh <- plet $ punsafeDowncast arty
+    addEventHandler # (veh #: pcon PFired #: reloadAmmo #: pnil)
+  forEach # (reg #: (units ## this) #: pnil)
 
 
 {-
+>>> compile 0 $ runTerm (template player) 0
+"private _var0 = ({\n (params) call ([_var1]);\n private _var2 = ({\n   (params) call ([_var3]);\n   (setvehicleammo) call (([_var3]) + (([1.0]) + ([])));\n});\n  private _var3 = (_var1);\n  (addEventHandler) call (([_var3]) + (([\"fired\"]) + (([_var2]) + ([]))));\n});\n(forEach) call (([_var0]) + (([(units) call (this)]) + ([])))"
 
+private _var0 = {
+ params call [_var1];
+ private _var2 = {
+   params call [_var3];
+   setvehicleammo call [_var3, 1.0];
+};
+  private _var3 = _var1;
+  addEventHandler call [_var3,"fired",_var2];
+};
+forEach call [_var0, units call this]
+
+private _reg = {
+ params call [_arty];
+ private _reload = {
+   params call [_unit];
+   setvehicleammo call [_unit, 1.0];
+  };
+ private _arty2 = _arty;
+ addEventHandler call [_arty2,"fired",_reload];
+};
+forEach call [_reg, units call this]
 
 private _reg = {
   params ["_arty"];
@@ -116,9 +131,6 @@ Call (Procedure [Call (GlobalVar "params") (ListLit [LocalVar "var0"]),Seq (Bind
   ]
 } call [1]
 
->>> q 0
-Couldn't match expected type: t0 -> t
-            with actual type: Term 'Stat s0 (PPair PInteger PInteger)
 -}
 
   -- Constant :: forall (a :: Type) s. Lift a => a -> SQF s (Lifted a)
