@@ -22,16 +22,12 @@ import Data.Kind (Constraint)
 import PSQF.HList (term, var)
 
 pprocedure ::
-  forall (ret :: PType) (c :: Scope) (args :: [PType]) (s :: S).
-  ( forall x. MatchArgs args ret c x
+  forall (ret :: PType) (c :: Scope) (c' :: Scope) (args :: [PType]) (s :: S).
+  ( MatchArgs args ret c s
   , UnLamHasNext args -- Needs to avoid GHC bug related to type inference (captured at f0507fcd60)
   ) =>
-  (forall x. Next args ret c x) -> Term c s (args :==> ret)
-pprocedure f = MkTerm impl
-  where
-    impl :: forall (s' :: S). Int -> SQF
-    impl lvl =
-      nextArg @args @ret @c @s' lvl [] f
+  (forall x. Next args ret c x) -> Term c' s (args :==> ret)
+pprocedure f = MkTerm $ \lvl -> nextArg @args @ret @c @s lvl [] f
 
 type UnLambdaOf :: [PType] -> PType -> Scope -> PType
 type family UnLambdaOf args b c s = f | f -> args b c s where
@@ -76,9 +72,9 @@ instance MatchArgs '[] b c s where
       , runTerm result lvl
       ]
 
-inferenceExample = pprocedure @PInteger @Expr @'[PInteger,PString,PBool] $ \a b c ->
+inferenceExample = pprocedure @PInteger @_ @_ @'[PInteger,PString,PBool] $ \a b c ->
   a -- inferred
 
 reverseInferenceExample :: _
-reverseInferenceExample = pprocedure @PBool @Expr {- args type inferred -} $
+reverseInferenceExample = pprocedure @PBool {- args type inferred -} $
   \(a :: Term Expr x PInteger) (b :: Term Expr x PBool) (c :: Term Expr x PString) -> b
