@@ -56,12 +56,12 @@ inferenceExample = pprocedure @PInteger @'[PInteger,PString,PBool] $ \a b c ->
   a -- inferred
 
 doesntWork :: _
-doesntWork = pprocedure @PBool {- args type inferred -} $
+doesntWork = pprocedure @PBool {- args type to be inferred -} $
   \(a :: Term Expr x PInteger) (b :: Term Expr x PBool) (c :: Term Expr x PString) ->
     (b :: Term Expr x PBool)
 
 works :: _
-works = pprocedure @PBool {- args type inferred -} $
+works = pprocedure @PBool {- args type to be inferred -} $
   \(a :: Term Expr x PInteger) (b :: Term Expr x PBool) (c :: Term Expr x PString) ->
     let _ = b in (b :: Term Expr x PBool)
 
@@ -71,6 +71,6 @@ worksAlso = pprocedure @PBool @'[PInteger,PBool,PString] $
     (b :: Term Expr x PBool)
 
 andThisWorks :: _
-andThisWorks = pprocedure @PBool {- args type inferred -} $
+andThisWorks = pprocedure @PBool {- args type to be inferred -} $
   \(a :: Term Expr x PInteger) (b :: Term Expr x PBool) (c :: Term Expr x PString) ->
     (id b :: Term Expr x PBool)
