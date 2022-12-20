@@ -7,6 +7,8 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+module PSQF where
 import PSQF.Definition
 import PSQF.HList
 import USQF (SQF(GlobalVar),compile)
