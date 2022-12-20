@@ -26,19 +26,12 @@ pprocedure ::
   ( forall x. MatchArgs args ret x
   , UnLamHasNext args
   ) =>
-  (forall x. UnLambdaOf args ret Expr x) -> Term c s (args :==> ret)
+  (forall x. Next args ret x) -> Term c s (args :==> ret)
 pprocedure f = MkTerm impl
   where
     impl :: forall (s' :: S). Int -> SQF
     impl lvl =
-      nextArg @args @ret @s' lvl []
-        ( let proof = unLamHasNext @args @ret @s'
-          in eqCoerce proof f :: Next args ret s')
-
-type ResultOf :: [PType] -> PType
-type family ResultOf args where
-  ResultOf '[a] = a
-  ResultOf (_:xs) = ResultOf xs
+      nextArg @args @ret @s' lvl [] f
 
 type UnLambdaOf :: [PType] -> PType -> Scope -> PType
 type family UnLambdaOf args b c s = f | f -> args b c s where
@@ -65,7 +58,7 @@ eqCoerce EqRefl x = x
 
 type MatchArgs :: [PType] -> PType -> S -> Constraint
 class MatchArgs xs b s where
-  type Next xs b s
+  type Next xs b s = c | c -> xs b s
   nextArg :: Int -> [String] -> Next xs b s -> SQF
 
 instance MatchArgs xs b s => MatchArgs (x:xs) b s where
