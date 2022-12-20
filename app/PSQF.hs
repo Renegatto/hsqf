@@ -54,10 +54,18 @@ addEventHandler = declareGlobal "addEventHandler"
 
 template :: forall c s. Term Expr s PPlayer -> Term c s (PList PBool)
 template this = P.do
-  let reg :: Term Expr s ('[PUnit] :==> PBool) 
-      reg = pprocedure $ \arty -> undefined
-
-      args :: Term c' s (PHList '[ '[PUnit] :==> PBool, PList PUnit])
+  let reg :: forall z. Term Stat z ('[PUnit] :==> PBool) 
+      reg = pprocedure @PVoid $ \arty -> P.do 
+        let rel :: forall x. Term Expr x ('[PVehicle] :==> PVoid)
+            rel = pprocedure @PVoid @_ @Expr @x $ \vehicle ->
+              setvehicleammo # (vehicle #: pconstant @Integer 1 #: pnil)
+            veh :: Term Expr z PVehicle
+            veh = undefined
+        veh' <- plet $ (undefined :: Term Expr z PVehicle)
+        addEventHandler @PVehicle # (rel #: veh #: pnil)
+        --reload <- plet rel
+        -- (undefined :: Term _ _ PBool)
+      args :: Term c' s (PHList '[ '[PUnit] :==> PVoid, PList PUnit])
       args = reg #: (units ## this) #: pnil
   forEach # args
 
