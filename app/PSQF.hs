@@ -45,6 +45,13 @@ z = units ## player
 forEach :: Term c s ('[ '[a] :==> b, PList a] :==> PList b)
 forEach = declareGlobal "forEach"
 
+setvehicleammo :: Term c s ('[PVehicle, PInteger] :==> PVoid)
+setvehicleammo = declareGlobal "setvehicleammo"
+
+addEventHandler ::
+  forall a c s. PSubtype a PObject => Term c s ('[ '[a] :==> PVoid, a] :==> PVoid)
+addEventHandler = declareGlobal "addEventHandler"
+
 template :: forall c s. Term Expr s PPlayer -> Term c s (PList PBool)
 template this = P.do
   let reg :: Term Expr s ('[PUnit] :==> PBool) 
