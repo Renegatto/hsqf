@@ -24,7 +24,6 @@ import PSQF.HList (term, var)
 pprocedure ::
   forall (ret :: PType) (args :: [PType]) (c :: Scope) (s :: S).
   ( forall x. MatchArgs args ret x
-  , UnLamHasNext args
   ) =>
   (forall x. Next args ret x) -> Term c s (args :==> ret)
 pprocedure f = MkTerm impl
@@ -32,29 +31,6 @@ pprocedure f = MkTerm impl
     impl :: forall (s' :: S). Int -> SQF
     impl lvl =
       nextArg @args @ret @s' lvl [] f
-
-type UnLambdaOf :: [PType] -> PType -> Scope -> PType
-type family UnLambdaOf args b c s = f | f -> args b c s where
-  UnLambdaOf '[] b c s = Term c s b
-  UnLambdaOf (x:xs) b c s = Term Expr s x -> UnLambdaOf xs b c s
-
--- | Just a proof for GHC
-class UnLamHasNext xs where
-  unLamHasNext :: forall b s. Equal (UnLambdaOf xs b Expr s) (Next xs b s)
-instance UnLamHasNext '[] where
-  unLamHasNext = EqRefl
-instance UnLamHasNext as => UnLamHasNext (a:as) where
-  unLamHasNext :: forall b s. Equal (UnLambdaOf (a : as) b 'Expr s) (Next (a : as) b s)
-  unLamHasNext = liftEq $ unLamHasNext @as @b @s
-
-data Equal a b where
-  EqRefl :: forall a. Equal a a 
-
-liftEq :: forall f a b. Equal a b -> Equal (f a) (f b)
-liftEq EqRefl = EqRefl
-
-eqCoerce :: Equal a b -> a -> b
-eqCoerce EqRefl x = x
 
 type MatchArgs :: [PType] -> PType -> S -> Constraint
 class MatchArgs xs b s where
