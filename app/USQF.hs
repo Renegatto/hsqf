@@ -57,8 +57,6 @@ compile lvl = \case
   BindLocally name definition ->
     bind ("private _" <> name) (compile lvl definition)
   Bind name definition -> bind name (compile lvl definition) 
-  -- optional, makes code less ugly, allows nesting
-  -- ExprStat procedure -> compileExpr lvl procedure
   ListLit exprs ->
     "[" <> intercalate "," (compile lvl <$> exprs) <> "]"
   NumLit n -> show n
