@@ -11,10 +11,14 @@ import USQF (SQF(ListLit))
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
 newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }
 newtype PPlayer s = MkPPlayer { getPlayer :: Term Expr s PPlayer }
+newtype PVehicle s = MkPVehicle { getVehicle :: Term Expr s PVehicle }
 
+-- | PSubtype a b means that a is subtype of b
 class PSubtype a b where
   pupcast :: Term Expr s a -> Term c s b
 instance PSubtype PUnit PObject where
+  pupcast = punsafeCoerce
+instance PSubtype PVehicle PObject where
   pupcast = punsafeCoerce
 
 newtype PList (a :: PType) s = MkPList {getPList :: Term Expr s (PList a)}
