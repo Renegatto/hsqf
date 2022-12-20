@@ -57,7 +57,16 @@ template this = P.do
 
 {-
 
-THE expr 'LET' is impossible, BOY :(
+
+private _reg = {
+  params ["_arty"];
+  private _reload = {
+    params ["_unit"];
+    _unit setvehicleammo 1
+  }; 
+  _arty addEventHandler ["fired",_reload]; 
+}; 
+{_x call _reg} forEach (units this);
 
 private _reg = {
   params ["_arty","_unit",];
