@@ -1,17 +1,19 @@
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
-module HSQF.Language.List (
-    PList,
+{-# LANGUAGE KindSignatures #-}
+
+module HSQF.Language.List
+  ( PList,
     pcons,
     (#::),
     pempty,
     pconcat,
     psingleton,
   )
-  where
-import HSQF.Language.Definition (PType, Scope(Expr), Term (MkTerm, runTerm))
-import SQF (SQF (ListLit))
+where
+
 import HSQF.Language.Common (declareOperator)
+import HSQF.Language.Definition (PType, Scope (Expr), Term (MkTerm, runTerm))
+import SQF (SQF (ListLit))
 
 newtype PList (a :: PType) s = MkPList
   {getPList :: Term Expr s (PList a)}

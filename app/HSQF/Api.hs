@@ -35,10 +35,10 @@ import HSQF.Language.Common
   )
 import HSQF.Language.Definition (Term (MkTerm))
 import HSQF.Language.HList (PHList, pnil)
+import HSQF.Language.List (PList)
 import HSQF.Language.Subtyping (PSubtype (pupcast))
 import HSQF.Language.Task (PTask)
 import SQF (SQF (GlobalVar, ListLit, StringLit))
-import HSQF.Language.List (PList)
 
 newtype PObject s = MkPObject {getObject :: Term Expr s PObject}
 
