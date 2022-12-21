@@ -43,6 +43,8 @@ module HSQF.Language.Common
 
     -- * Misc
     mkVar,
+    var,
+    term,
   )
 where
 
@@ -64,7 +66,7 @@ import SQF
         ListLit,
         NumLit,
         StringLit,
-        UnaryOperator
+        UnaryOperator, LocalVar
       ),
   )
 import Unsafe.Coerce (unsafeCoerce)
@@ -197,6 +199,12 @@ instance PCon PBool where
 
 mkVar :: Int -> String
 mkVar = mappend "var" . show
+
+var :: Int -> SQF
+var = LocalVar . mkVar
+
+term :: SQF -> Term c s a
+term = MkTerm . const
 
 ptraceError :: Term 'Expr s PString -> Term c s a
 ptraceError = declareUnary "throw"

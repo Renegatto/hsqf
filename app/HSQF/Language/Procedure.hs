@@ -16,9 +16,10 @@ import HSQF.Language.Common
     Term,
     mkVar,
     type (:==>),
+    var,
+    term,
   )
 import HSQF.Language.Definition (Term (MkTerm, runTerm))
-import HSQF.Language.HList (term, var)
 import SQF
   ( SQF
       ( ListLit,
@@ -44,7 +45,10 @@ instance MatchArgs xs b c s => MatchArgs (x : xs) b c s where
   type Next (x : xs) b c s = (Term 'Expr s x -> Next xs b c s)
   nextArg :: Int -> [String] -> (Term 'Expr s x -> Next xs b c s) -> SQF
   nextArg lvl vars f =
-    nextArg @xs @b @c @s (succ lvl) (mkVar lvl : vars) (f $ term $ var lvl)
+    nextArg @xs @b @c @s
+      (succ lvl)
+      (mkVar lvl : vars)
+      (f $ term $ var lvl)
 
 instance MatchArgs '[] b c s where
   type Next '[] b c s = Term c s b
