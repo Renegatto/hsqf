@@ -1,13 +1,4 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 module HSQF.Language.Definition
   ( S,
@@ -36,7 +27,7 @@ import SQF
         UnaryOperator
       ),
   )
-import qualified SQF
+import SQF qualified
 import Unsafe.Coerce (unsafeCoerce)
 
 data S
@@ -45,8 +36,6 @@ type PType = S -> Type
 
 type Scope :: Type
 data Scope = Expr | Stat
-
-type ClosedTerm = forall s. Term s
 
 type Term :: Scope -> S -> PType -> Type
 newtype Term c s a = MkTerm {runTerm :: Int -> SQF}

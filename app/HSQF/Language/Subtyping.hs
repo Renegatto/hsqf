@@ -1,10 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
-
 module HSQF.Language.Subtyping
   ( PSubtype (pupcast),
     pcontraFirst,
@@ -29,7 +22,7 @@ pcontraFirst = punsafeCoerce
 
 -- | PSubtype a b means that a is subtype of b
 class PSubtype a b where
-  pupcast :: Term Expr s a -> Term c s b
+  pupcast :: Term 'Expr s a -> Term c s b
 
 class SubFunction ys xs where
   pcontra :: Term c s (xs :==> a) -> Term c s (ys :==> a)

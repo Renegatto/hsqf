@@ -1,13 +1,4 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 module HSQF.Language.Common
   ( -- * Definition
@@ -52,6 +43,8 @@ module HSQF.Language.Common
 
     -- * Misc
     mkVar,
+    var,
+    term,
   )
 where
 
@@ -73,12 +66,12 @@ import SQF
         ListLit,
         NumLit,
         StringLit,
-        UnaryOperator
+        UnaryOperator, LocalVar
       ),
   )
 import Unsafe.Coerce (unsafeCoerce)
 
-(##) :: Term Expr s0 (a :--> b) -> Term Expr s a -> Term c s b
+(##) :: Term 'Expr s0 (a :--> b) -> Term 'Expr s a -> Term c s b
 f ## x = MkTerm $ \lvl ->
   Call (ListLit [runTerm x lvl]) (runTerm f lvl)
 
@@ -95,17 +88,17 @@ class PCon (a :: PType) where
 
 class PMatch (a :: PType) where
   type PPattern a :: PType
-  match :: Term Expr s a -> (PPattern a s -> Term c s b) -> Term c s b
+  match :: Term 'Expr s a -> (PPattern a s -> Term c s b) -> Term c s b
 
 punsafeCoerce :: Term c s a -> Term c' s b
 punsafeCoerce = unsafeCoerce
 
-pif :: Term Expr s PBool -> Term c s a -> Term c s a -> Term c s a
+pif :: Term 'Expr s PBool -> Term c s a -> Term c s a -> Term c s a
 pif b success failure = MkTerm $ \lvl ->
   If (runTerm b lvl) (runTerm success lvl) (runTerm failure lvl)
 
 type PInteger :: PType
-newtype PInteger s = MkInteger {runPInteger :: Term Expr s PInteger}
+newtype PInteger s = MkInteger {runPInteger :: Term 'Expr s PInteger}
 
 _ = pconstant 2 :: Term c s PInteger
 
@@ -121,12 +114,12 @@ instance PConstant Integer where
   pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
 
 type PString :: PType
-newtype PString s = MkString {runPString :: Term Expr s PString}
+newtype PString s = MkString {runPString :: Term 'Expr s PString}
 
 _ = pconstant "foo" :: Term c s PString
 
 type PVoid :: PType
-newtype PVoid s = MkPVoid {runPVoid :: Term Expr s PVoid}
+newtype PVoid s = MkPVoid {runPVoid :: Term 'Expr s PVoid}
 
 instance PCon PVoid where
   pcon :: PVoid s -> Term c s PVoid
@@ -152,19 +145,19 @@ instance PConstant String where
   pconstant :: String -> Term c s (PConstanted String)
   pconstant s = MkTerm $ \_ -> StringLit s
 
-(#&&) :: Term Expr s PBool -> Term Expr s PBool -> Term c s PBool
+(#&&) :: Term 'Expr s PBool -> Term 'Expr s PBool -> Term c s PBool
 (#&&) = declareOperator "&&"
 
-(#||) :: Term Expr s PBool -> Term Expr s PBool -> Term c s PBool
+(#||) :: Term 'Expr s PBool -> Term 'Expr s PBool -> Term c s PBool
 (#||) = declareOperator "||"
 
-pnot :: Term Expr s PBool -> Term c s PBool
+pnot :: Term 'Expr s PBool -> Term c s PBool
 pnot = declareUnary "not"
 
-(#==) :: POrd a => Term Expr s a -> Term Expr s a -> Term c s PBool
+(#==) :: POrd a => Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
 a #== b = (a #>= b) #&& (a #<= b)
 
-(#>) :: POrd a => Term Expr s a -> Term Expr s a -> Term c s PBool
+(#>) :: POrd a => Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
 a #> b = (a #>= b) #&& pnot (a #== b)
 
 (#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
@@ -172,28 +165,28 @@ a #> b = (a #>= b) #&& pnot (a #== b)
 
 class POrd (a :: PType) where
   {-# MINIMAL (#>=), (#<=) #-}
-  (#>=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
-  (#<=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
+  (#>=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
 
 instance POrd (a :: PType) where
-  (#>=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
+  (#>=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
   (#>=) = declareOperator ">="
 
-  (#<=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
+  (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
   (#<=) = declareOperator ">="
 
-instance Num (Term Expr s PInteger) where
-  (+) :: Term Expr s PInteger -> Term Expr s PInteger -> Term Expr s PInteger
+instance Num (Term 'Expr s PInteger) where
+  (+) :: Term 'Expr s PInteger -> Term 'Expr s PInteger -> Term 'Expr s PInteger
   (+) = declareOperator "+"
-  (-) :: Term Expr s PInteger -> Term Expr s PInteger -> Term Expr s PInteger
+  (-) :: Term 'Expr s PInteger -> Term 'Expr s PInteger -> Term 'Expr s PInteger
   (-) = declareOperator "-"
-  (*) :: Term Expr s PInteger -> Term Expr s PInteger -> Term Expr s PInteger
+  (*) :: Term 'Expr s PInteger -> Term 'Expr s PInteger -> Term 'Expr s PInteger
   (*) = declareOperator "*"
-  fromInteger :: Integer -> Term Expr s PInteger
+  fromInteger :: Integer -> Term 'Expr s PInteger
   fromInteger = pconstant
-  abs :: Term Expr s PInteger -> Term Expr s PInteger
+  abs :: Term 'Expr s PInteger -> Term 'Expr s PInteger
   abs a = pif (a #>= 0) a (negate a)
-  signum :: Term Expr s PInteger -> Term Expr s PInteger
+  signum :: Term 'Expr s PInteger -> Term 'Expr s PInteger
   signum a = pif (a #> 0) 1 (pif (a #== 0) 0 (-1))
 
 type PBool :: PType
@@ -207,22 +200,28 @@ instance PCon PBool where
 mkVar :: Int -> String
 mkVar = mappend "var" . show
 
-ptraceError :: Term Expr s PString -> Term c s a
+var :: Int -> SQF
+var = LocalVar . mkVar
+
+term :: SQF -> Term c s a
+term = MkTerm . const
+
+ptraceError :: Term 'Expr s PString -> Term c s a
 ptraceError = declareUnary "throw"
 
 declareGlobal :: forall a c s. String -> Term c s a
 declareGlobal varid = MkTerm $ \_ -> GlobalVar varid
 
-declareUnary :: forall a b c c' s. String -> Term Expr s a -> Term c' s b
+declareUnary :: forall a b c s. String -> Term 'Expr s a -> Term c s b
 declareUnary varid x = MkTerm $ \lvl ->
   UnaryOperator varid (runTerm x lvl)
 
-declareOperator :: forall a b d c c' s. String -> Term Expr s a -> Term Expr s b -> Term c' s d
+declareOperator :: forall a b d c s. String -> Term 'Expr s a -> Term 'Expr s b -> Term c s d
 declareOperator varid x y = MkTerm $ \lvl ->
   BinaryOperator varid (runTerm x lvl) (runTerm y lvl)
 
-unExpr :: Term Expr s a -> Term c s a
+unExpr :: Term 'Expr s a -> Term c s a
 unExpr = punsafeCoerce
 
-expr :: Term Expr s a -> Term Expr s a
+expr :: Term 'Expr s a -> Term 'Expr s a
 expr = id

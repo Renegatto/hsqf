@@ -28,11 +28,37 @@ extra-source-files: CHANGELOG.md
 executable arma
     main-is:          Main.hs
     default-extensions:
-      NoStarIsType
       BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      EmptyCase
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      HexFloatLiterals
+      InstanceSigs
+      ImportQualifiedPost
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      NumericUnderscores
+      ScopedTypeVariables
+      StandaloneDeriving
+      StandaloneKindSignatures
+      TupleSections
+      TypeApplications
+      TypeOperators
+      TypeSynonymInstances
     -- Modules included in this executable, other than Main.
     other-modules:
-       HSQF
+       Examples
        HSQF.Api
        HSQF.Prelude
        HSQF.Language.HList
@@ -42,10 +68,16 @@ executable arma
        HSQF.Language.Procedure
        HSQF.Language.Subtyping
        HSQF.Language.Task
+       HSQF.Language.List
        SQF
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
+    ghc-options:
+      -Wall -Wcompat -Werror=incomplete-uni-patterns
+      -Werror=incomplete-record-updates -Wredundant-constraints
+      -Wmissing-export-lists -Wmissing-deriving-strategies
+
     build-depends:    base 
     -- , plutarch-core
     hs-source-dirs:   app

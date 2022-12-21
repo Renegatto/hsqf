@@ -1,22 +1,6 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-
 module SQF (SQF (..), compile, unNewLine) where
 
 import Data.Function (fix)
-import Data.Kind (Type)
 import Data.List (intercalate)
 
 -- | Untyped (lmao) SQF language
@@ -34,16 +18,21 @@ data SQF
   | BindLocally String SQF
   | Bind String SQF
   | If SQF SQF SQF
-  deriving (Show)
+  deriving stock (Show)
 
+nl :: Char
 nl = '\n'
 
+eol :: [Char]
 eol = [';', nl]
 
+parens :: String -> String
 parens x = "(" <> x <> ")"
 
+bind :: String -> String -> String
 bind ident expr = ident <> " = " <> expr <> ";"
 
+indent :: Int -> [Char]
 indent n = replicate n ' '
 
 unNewLine :: String -> String

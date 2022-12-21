@@ -1,19 +1,6 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module HSQF.Language.Procedure where
@@ -26,18 +13,16 @@ import HSQF.Language.Common
     PType,
     S,
     Scope (Expr),
-    Term (..),
+    Term,
     mkVar,
     type (:==>),
+    var,
+    term,
   )
 import HSQF.Language.Definition (Term (MkTerm, runTerm))
-import HSQF.Language.HList (term, var)
 import SQF
   ( SQF
-      ( Call,
-        GlobalVar,
-        ListLit,
-        LocalVar,
+      ( ListLit,
         Procedure,
         StringLit,
         UnaryOperator
@@ -57,10 +42,13 @@ class MatchArgs xs b c s where
   nextArg :: Int -> [String] -> Next xs b c s -> SQF
 
 instance MatchArgs xs b c s => MatchArgs (x : xs) b c s where
-  type Next (x : xs) b c s = (Term Expr s x -> Next xs b c s)
-  nextArg :: Int -> [String] -> (Term Expr s x -> Next xs b c s) -> SQF
+  type Next (x : xs) b c s = (Term 'Expr s x -> Next xs b c s)
+  nextArg :: Int -> [String] -> (Term 'Expr s x -> Next xs b c s) -> SQF
   nextArg lvl vars f =
-    nextArg @xs @b @c @s (succ lvl) (mkVar lvl : vars) (f $ term $ var lvl)
+    nextArg @xs @b @c @s
+      (succ lvl)
+      (mkVar lvl : vars)
+      (f $ term $ var lvl)
 
 instance MatchArgs '[] b c s where
   type Next '[] b c s = Term c s b
@@ -76,5 +64,5 @@ inferenceExample = pprocedure @PInteger @_ @_ @'[PInteger, PString, PBool] $ \a 
 
 reverseInferenceExample :: _
 reverseInferenceExample = pprocedure @PBool {- args type inferred -} $
-  \(a :: Term Expr x PInteger) (b :: Term Expr x PBool) (c :: Term Expr x PString) ->
+  \(_ :: Term 'Expr x PInteger) (b :: Term 'Expr x PBool) (_ :: Term 'Expr x PString) ->
     b
