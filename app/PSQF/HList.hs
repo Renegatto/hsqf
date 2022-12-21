@@ -24,9 +24,10 @@ module PSQF.HList where
 
 import Data.Data (Proxy (Proxy))
 import Data.Kind (Type)
+import GHC.Base (Constraint)
 import GHC.TypeLits (natVal)
 import GHC.TypeNats (KnownNat, type (-))
-import PSQF.Definition
+import PSQF.Common
   ( PBool (PTrue),
     PCon (..),
     PConstant (..),
@@ -42,6 +43,7 @@ import PSQF.Definition
     punsafeCoerce,
     type (:==>),
   )
+import PSQF.Definition (Term (MkTerm, runTerm))
 import SQF
   ( SQF
       ( BindLocally,
@@ -53,7 +55,6 @@ import SQF
         Seq
       ),
   )
-import GHC.Base (Constraint)
 
 -- FIXME: 'params' must be called with String literals, not with vars identifiers
 

@@ -1,6 +1,6 @@
 module PSQF.Monadic ((>>=),(>>),fail) where
-import Prelude (String,id,(.))
-import PSQF.Definition ( PConstant(pconstant), Term, ptraceError )
+import PSQF.Common (PConstant (pconstant), Term, ptraceError)
+import Prelude (String, id, (.))
 
 (>>=) :: (x -> Term c s a) -> x -> Term c s a
 (>>=) = id

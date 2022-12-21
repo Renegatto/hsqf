@@ -10,7 +10,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module PSQF where
 
-import PSQF.Definition
+import PSQF.Common
   ( PCon (pcon),
     PConstant (pconstant),
     PInteger,

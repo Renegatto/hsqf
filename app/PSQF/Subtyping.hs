@@ -7,7 +7,8 @@
 module PSQF.Subtyping where
 
 import PSQF.Api ( PSubtype )
-import PSQF.Definition (Term, type (:==>), punsafeCoerce)
+import PSQF.Common (punsafeCoerce)
+import PSQF.Definition (Term, type (:==>))
 
 step ::
   (Term c s (xs :==> b) -> Term c s (ys :==> b'))

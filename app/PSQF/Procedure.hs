@@ -19,7 +19,7 @@
 module PSQF.Procedure where
 
 import Data.Kind (Constraint)
-import PSQF.Definition
+import PSQF.Common
   ( PBool,
     PInteger,
     PString,
@@ -30,8 +30,19 @@ import PSQF.Definition
     mkVar,
     type (:==>),
   )
-import SQF (SQF (Call, GlobalVar, ListLit, LocalVar, Procedure, StringLit, UnaryOperator))
+import PSQF.Definition (Term (MkTerm, runTerm))
 import PSQF.HList (term, var)
+import SQF
+  ( SQF
+      ( Call,
+        GlobalVar,
+        ListLit,
+        LocalVar,
+        Procedure,
+        StringLit,
+        UnaryOperator
+      ),
+  )
 
 pprocedure ::
   forall (ret :: PType) (c :: Scope) (c' :: Scope) (args :: [PType]) (s :: S).

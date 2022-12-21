@@ -2,12 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 module PSQF.Task (PTask(getTask), ptask) where
-import PSQF.Definition
-  ( PType,
-    Scope (Expr),
-    Term (MkTerm),
-    punsafeCoerce,
-  )
+import PSQF.Definition (PType, Scope (Expr), Term (MkTerm))
 
 type PTask :: PType -> PType
 newtype PTask a s = MkPTask { getTask :: forall s0. Term Expr s0 a }

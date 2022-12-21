@@ -7,13 +7,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 module PSQF.Api where
 
-import PSQF.Definition
+import PSQF.Common
   ( PCon (..),
     PInteger,
     PType,
     PVoid,
     Scope (Expr),
-    Term (MkTerm),
+    Term,
     declareOperator,
     declareUnary,
     punsafeCoerce,
@@ -22,7 +22,7 @@ import PSQF.Definition
 import PSQF.HList (PHList, pnil)
 import SQF (SQF (GlobalVar, ListLit, StringLit))
 import PSQF.Task (PTask)
-
+import PSQF.Definition (Term(MkTerm))
 
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
 newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }
@@ -50,10 +50,8 @@ instance PSubtype PVehicle PObject where
 punsafeDowncast :: PSubtype a b => Term Expr s b -> Term c s a
 punsafeDowncast = punsafeCoerce
 
-newtype PList (a :: PType) s = MkPList {getPList :: Term Expr s (PList a)}
-
--- pappend :: Term Expr s (PList a) -> Term Expr s a -> Term c s (PList a)
--- pappend = declareOperator "append"
+newtype PList (a :: PType) s = MkPList
+  {getPList :: Term Expr s (PList a)}
 
 pempty :: Term c s (PList a)
 pempty = MkTerm $ \_ -> ListLit [] 
