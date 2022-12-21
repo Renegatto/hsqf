@@ -40,13 +40,25 @@ thisPlayer = declareGlobal "this"
 infAmmoForEveryUnitOf ::
   forall c s.
   Term Expr s PPlayer ->
-  Term Stat s PVoid
+  Term Stat s PVoid -- All this term is a statement, because of use of `plet`
 infAmmoForEveryUnitOf player = P.do
   event <- plet $ pcon PFired
   giveInfAmmo <- plet $ pprocedure $ \arty -> P.do
-    reloadAmmo <- plet $ ptask $ pprocedure $ \forVehicle ->
+    reloadAmmo <- plet $ ptask $ pprocedure $ \forVehicle -> P.do
+      {- Note, that we can't use `event` from outer scope here,
+        because `reloadAmmo` is a `PTask` (asyncronous CODE)
+        and therefore have only *own* and *global* scopes.
+        `PTask` is not a closure.
+
+        We achieve this property to typecheck simply
+        by universally quantifying over `s` (context type variable).
+      -} 
+      -- _ <- plet $ event
       forVehicle `setvehicleammo` pconstant @Integer 1
     artyAsVehicle <- plet $ punsafeDowncast arty
+    {- Note that we can use `event` from outer scope here,
+      because procedure (CODE) is simply a closure
+    -}
     artyAsVehicle `addEventHandler` (event #: reloadAmmo #: pnil)
   giveInfAmmo `forEach` units player
 
