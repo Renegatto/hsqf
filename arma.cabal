@@ -32,7 +32,7 @@ executable arma
       BangPatterns
     -- Modules included in this executable, other than Main.
     other-modules:
-       HSQF
+       Examples
        HSQF.Api
        HSQF.Prelude
        HSQF.Language.HList

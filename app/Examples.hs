@@ -9,7 +9,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-module HSQF where
+module Examples
+  ( someResult,
+    someLambda,
+    someProcedure,
+    thisPlayer,
+    infAmmoForEveryUnitOf,
+  )
+where
 
 import HSQF.Api
   ( PEvent (PFired),
