@@ -1,72 +1,68 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QualifiedDo #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+module PSQF where
 import PSQF.Definition
 import PSQF.HList
-import USQF (SQF(GlobalVar))
+import USQF (SQF(GlobalVar),compile,unNewLine)
+import qualified PSQF.Monadic as P
+import PSQF.Api
+import PSQF.Procedure (pprocedure)
+import PSQF.Subtyping (pcontraFirst)
+import PSQF.Task (ptask)
 
-currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
-currentvehiclespeed =
-  MkTerm $ \_ -> GlobalVar "currentvehiclespeed"
+someResult :: Term c s PInteger
+someResult = someLambda # psingleton (pconstant @Integer 1)
 
-gc = gCorrect # psingleton (pconstant @Integer 1)
+someLambda:: Term c s ('[PInteger] :==> PInteger)
+someLambda = plam $ \(MkFlip x) ->
+  plet (pconstant 12) $ \n -> 
+    let fstNumber = sel @0 $ n #: n #: pnil
+    in (fstNumber + x) `currentvehiclespeed` x
 
-gCorrect :: Term Stat s ('[PInteger] :==> PInteger)
-gCorrect = plam @'[PInteger] $ \(MkFlip x) ->
-  plet (pconstant @Integer 12) $ \n -> 
-    let q = pcon $ MkPPair n n
-        q0 = sel @0 $ toHList q
-    in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
+someProcedure:: Term c s ('[PInteger] :==> PInteger)
+someProcedure = pprocedure $ \x ->
+  plet (pconstant 12) $ \n -> 
+    let fstNumber = sel @0 $ n #: n #: pnil
+    in (fstNumber + x) `currentvehiclespeed` x
 
+thisPlayer :: Term 'Expr s PPlayer
+thisPlayer = declareGlobal "this"
 
--- g :: Term Stat s ('[PInteger] :==> PInteger)
--- g = plam @'[PInteger] $ \(MkFlip x) ->
---   let q0 = sel @0 $ toHList q
---   in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
+-- | Units means to be artillery
+infAmmoForEveryUnitOf ::
+  forall c s.
+  Term Expr s PPlayer ->
+  Term Stat s PVoid -- All this term is a statement, because of use of `plet`
+infAmmoForEveryUnitOf player = P.do
+  event <- plet $ pcon PFired
+  giveInfAmmo <- plet $ pprocedure $ \arty -> P.do
+    reloadAmmo <- plet $ ptask $ pprocedure $ \forVehicle -> P.do
+      {- Note, that we can't use `event` from outer scope here,
+        because `reloadAmmo` is a `PTask` (asyncronous CODE)
+        and therefore have only *own* and *global* scopes.
+        `PTask` is not a closure.
 
-q :: Term Stat s (PPair PInteger PInteger)
-q = plet (pconstant @Integer 12) $ \n -> pcon $ MkPPair n n
+        We achieve this property to typecheck simply
+        by universally quantifying over `s` (context type variable).
+      -} 
+      -- _ <- plet $ event
+      forVehicle `setvehicleammo` pconstant @Integer 1
+    artyAsVehicle <- plet $ punsafeDowncast arty
+    {- Note that we can use `event` from outer scope here,
+      because procedure (CODE) is simply a closure
+    -}
+    artyAsVehicle `addEventHandler` (event #: reloadAmmo #: pnil)
+  giveInfAmmo `forEach` units player
 
 {-
-
-THE expr 'LET' is impossible, BOY :(
-
->>> runTerm gc 0
-{ params call [_var0];
-  private _var1 = 12;
-  currentvehiclespeed call [(select call [0,[_var1,_var1]]) + _var0,_var0];
-} call [1];
-
-
-{ params call [_var0];
-  currentvehiclespeed call
-    [ select call
-        [0, let private _var1 = 12.0 in [_var1,_var1]]) + _var0 
-    ,_var0
-    ];
-} call [1];
-
-
-
-{ params call [var1];
-  currentvehiclespeed call
-    [(select call [0, let private var6 = 12 in [var6,var6]]) + var1
-    ,var1
-    ]
-  ]
-} call [1]
-
->>> q 0
-Couldn't match expected type: t0 -> t
-Couldn't match expected type: t0 -> t
-            with actual type: Term 'Stat s0 (PPair PInteger PInteger)
+>>> unNewLine $ compile 0 $ runTerm (reloadAmmoForEveryUnitOf player) 0
+"private _var0 = \"fired\"; private _var1 = {  (params [\"_var2\"]);  private _var3 = {    (params [\"_var4\"]);    (_var4 setvehicleammo 1.0); };   private _var4 = _var2;   (_var4 addEventHandler ([_var0] + ([_var3] + []))); }; (_var1 forEach (units this))"
 -}
-
-  -- Constant :: forall (a :: Type) s. Lift a => a -> SQF s (Lifted a)
-  -- Downcast :: forall b s a. Subtype a b => SQF s a -> SQF s b 
-  -- SCon :: forall s (a :: SType). a s -> SQF s a
-  -- BuiltinFn :: forall s a b. String -> SQF s (a :--> b)
-  -- Procedure :: forall a b s. (forall s. SQF s a -> SQF s b) -> SQF s (a :--> b)
-  -- Call :: forall a b s. (forall s0. SQF s0 (a :--> b)) -> SQF s a -> SQF s b  
-
-

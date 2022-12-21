@@ -18,6 +18,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module PSQF.HList where
 import PSQF.Definition
@@ -26,6 +27,9 @@ import GHC.TypeNats (KnownNat, type (-))
 import USQF
 import GHC.TypeLits (natVal)
 import Data.Data (Proxy(Proxy))
+import GHC.Base (Constraint)
+
+-- FIXME: 'params' must be called with String literals, not with vars identifiers
 
 type PPair :: PType -> PType -> PType
 data PPair a b s = MkPPair (Term Expr s a) (Term Expr s b)
@@ -40,13 +44,6 @@ plet def scope = MkTerm $ \lvl ->
 type PTup3 :: PType -> PType -> PType -> PType
 data PTup3 a b d s = MkTup3 (Term Expr s a) (Term Expr s b) (Term Expr s d)
 
--- plam' :: (Term c s a -> Term c s b) -> Term c s (a :--> b)
--- plam' f = MkTerm $ \lvl ->
---   let var = LocalVar $ mkVar lvl
---   in Procedure
---     [ Call (GlobalVar "params") $ ListLit [var]
---     , runTerm (f (MkTerm $ const var)) (succ lvl)
---     ]
 type Flip :: (a -> b -> Type) -> b -> a -> Type
 newtype Flip f a b = MkFlip (f b a)
 
@@ -83,21 +80,21 @@ instance PMatch (PHList '[a,b,d]) where
     runTerm (f $ MkTup3 (sel @0 xs) (sel @1 xs) (sel @2 xs)) lvl
 
 plam ::
-  forall args b c s.
+  forall args b c c' s.
   PLamL args =>
   (forall s. PPattern (PHList args) s -> Term c s b) ->
-  Term c s (args :==> b)
+  Term c' s (args :==> b)
 plam = plam'
 
 class PLamL args where
   plam' ::
     (forall s. PPattern (PHList args) s -> Term c s b) ->
-    Term c s (args :==> b)
+    Term c' s (args :==> b)
 
 instance PLamL '[a] where
   plam' ::
     (forall s. Flip (Term Expr) a s -> Term c s b) ->
-    Term c s ('[a] :==> b)
+    Term c' s ('[a] :==> b)
   plam' f = MkTerm $ \lvl ->
     let var = LocalVar $ mkVar lvl
     in Procedure
@@ -107,7 +104,7 @@ instance PLamL '[a] where
 instance PLamL '[a,b] where
   plam' ::
     (forall s. PPair a b s -> Term c s d) ->
-    Term c s ('[a,b] :==> d)
+    Term c' s ('[a,b] :==> d)
   plam' f = MkTerm $ \lvl ->
     let var0 = LocalVar $ mkVar lvl
         var1 = LocalVar $ mkVar $ succ lvl
@@ -119,7 +116,7 @@ instance PLamL '[a,b] where
 instance PLamL '[a,b,c] where
   plam' ::
     (forall s. PTup3 a b c s -> Term e s d) ->
-    Term e s ('[a,b,c] :==> d)
+    Term e' s ('[a,b,c] :==> d)
   plam' f = MkTerm $ \lvl ->
     let var = LocalVar . mkVar
         var0 = var lvl
@@ -131,18 +128,20 @@ instance PLamL '[a,b,c] where
       , runTerm (f (MkTup3 (term var0) (term var1) (term var2))) (succ lvl)
       ]
  
-(#) :: (forall s'. Term c s' (args :==> b)) -> Term Expr s (PHList args) -> Term c' s b
+(#) :: Term Expr s (args :==> b) -> Term Expr s (PHList args) -> Term c s b
 f # x = MkTerm $ \lvl ->
-  Call (runTerm f lvl) (runTerm x lvl)
+  Call (runTerm x lvl) (runTerm f lvl)
 
 newtype PHList (xs :: [PType]) s = MkHList
-  { runHList :: Term Expr s (PHList xs)} 
+  { runHList :: Term Expr s (PHList xs)}
+
+instance (PLift pa, PLift pb) => PLift (PHList '[pa,pb]) where
+  type PLifted (PHList '[pa,pb]) = (PLifted pa,PLifted pb)
 
 instance (PConstant a, PConstant b) => PConstant (a,b) where
-  type PConst (a,b) = PHList '[PConst a, PConst b]
-  pconstant :: (PConstant a, PConstant b) => (a, b) -> Term c s (PConst (a, b))
+  type PConstanted (a,b) = PHList '[PConstanted a, PConstanted b]
+  pconstant :: (PConstant a, PConstant b) => (a, b) -> Term c s (PConstanted (a, b))
   pconstant (a,b) = ppairList (pconstant a) (pconstant b)
-
 
 psingleton :: Term c s a -> Term c s (PHList '[a])
 psingleton x = MkTerm $ \lvl ->
@@ -153,18 +152,21 @@ ppairList a b = MkTerm $ \lvl ->
   ListLit [runTerm a lvl, runTerm b lvl]
 
 -- | Not safe!
-select :: forall xs x c s. Term c s (PHList '[PInteger, PHList xs] :--> x)
-select = MkTerm $ \_ -> GlobalVar "select" 
+select ::
+  forall xs x c s.
+  Term Expr s (PHList xs) ->
+  Term Expr s PInteger ->
+  Term c s x
+select = declareOperator "select" 
 
 sel ::
   forall n (xs :: [PType]) c s.
   KnownNat n =>
   Term Expr s (PHList xs) ->
   Term c s (Nth n xs)
-sel xs =
-    select @xs @(Nth n xs) ## ppairList (pconstant @Integer index) xs
+sel xs = xs `select` pconstant @Integer index
   where
-      index = fromIntegral $ natVal $ Proxy @n
+    index = fromIntegral $ natVal $ Proxy @n
 
 getFst :: forall c s a b. Term Expr s (PHList '[a,b]) -> Term c s a
 getFst = sel @0
@@ -189,3 +191,34 @@ instance ToHList (PTup3 a b d) where
 type family Nth n (xs :: [k]) where
   Nth 0 (x:xs) = x
   Nth n (_:xs) = Nth (n - 1) xs 
+
+type PForgetTerm :: Scope -> PType
+data PForgetTerm c s = forall a.
+  MkPForgetTerm {recallTerm :: Term c s a}
+
+type family (xs :: [k]) :++: (ys :: [k]) :: [k] where
+  '[] :++: ys = ys
+  (x ': xs) :++: ys = x ': (xs :++: ys)   
+
+pconcat :: Term Expr s (PHList xs) -> Term Expr s (PHList ys) -> Term c s (PHList (xs :++: ys))
+pconcat = declareOperator "+"
+
+pnil :: Term c s (PHList '[])
+pnil = MkTerm $ \_ -> ListLit []
+
+pcons :: Term Expr s x -> Term Expr s (PHList xs) -> Term c s (PHList (x:xs))
+pcons = pconcat . psingleton
+
+(#:) :: Term 'Expr s x -> Term 'Expr s (PHList xs) -> Term c s (PHList (x : xs))
+x #: xs = pcons x xs
+
+infixr 5 #:
+
+var :: Int -> SQF
+var = LocalVar . mkVar
+
+term :: SQF -> Term c s a
+term = MkTerm . const
+
+exampleList :: Term Expr s (PHList '[PInteger,PBool,PString])
+exampleList = pconstant 4 #: pcon PTrue #: pconstant "214" #: pnil
