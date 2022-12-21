@@ -1,10 +1,11 @@
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeOperators #-}
+
 module HSQF.Api where
 
 import HSQF.Language.Common
@@ -19,20 +20,24 @@ import HSQF.Language.Common
     punsafeCoerce,
     type (:==>),
   )
+import HSQF.Language.Definition (Term (MkTerm))
 import HSQF.Language.HList (PHList, pnil)
-import SQF (SQF (GlobalVar, ListLit, StringLit))
-import HSQF.Language.Task (PTask)
-import HSQF.Language.Definition (Term(MkTerm))
 import HSQF.Language.Subtyping (PSubtype (pupcast))
+import HSQF.Language.Task (PTask)
+import SQF (SQF (GlobalVar, ListLit, StringLit))
 
-newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
-newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }
-newtype PPlayer s = MkPPlayer { getPlayer :: Term Expr s PPlayer }
-newtype PVehicle s = MkPVehicle { getVehicle :: Term Expr s PVehicle }
+newtype PObject s = MkPObject {getObject :: Term Expr s PObject}
+
+newtype PUnit s = MkPUnit {getUnit :: Term Expr s PUnit}
+
+newtype PPlayer s = MkPPlayer {getPlayer :: Term Expr s PPlayer}
+
+newtype PVehicle s = MkPVehicle {getVehicle :: Term Expr s PVehicle}
 
 type PEvent :: PType
-data PEvent s =
-  PFired | PHealed
+data PEvent s
+  = PFired
+  | PHealed
 
 instance PCon PEvent where
   pcon PFired = MkTerm $ \_ -> StringLit "fired"
@@ -40,8 +45,10 @@ instance PCon PEvent where
 
 instance PSubtype PUnit PObject where
   pupcast = punsafeCoerce
+
 instance PSubtype PVehicle PUnit where
   pupcast = punsafeCoerce
+
 instance PSubtype PVehicle PObject where
   pupcast = punsafeCoerce
 
@@ -52,7 +59,7 @@ newtype PList (a :: PType) s = MkPList
   {getPList :: Term Expr s (PList a)}
 
 pempty :: Term c s (PList a)
-pempty = MkTerm $ \_ -> ListLit [] 
+pempty = MkTerm $ \_ -> ListLit []
 
 units :: Term Expr s PPlayer -> Term c s (PList PUnit)
 units = declareUnary "units"
@@ -76,7 +83,9 @@ setvehicleammo ::
   Term c s PVoid
 setvehicleammo = declareOperator "setvehicleammo"
 
-addEventHandler :: forall a c s. PSubtype a PObject =>
+addEventHandler ::
+  forall a c s.
+  PSubtype a PObject =>
   Term Expr s a ->
   Term Expr s (PHList '[PEvent, PTask ('[a] :==> PVoid)]) ->
   Term c s PVoid

@@ -1,4 +1,5 @@
-module HSQF.Language.Monadic ((>>=),(>>),fail) where
+module HSQF.Language.Monadic ((>>=), (>>), fail) where
+
 import HSQF.Language.Common (PConstant (pconstant), Term, ptraceError)
 import Prelude (String, id, (.))
 
@@ -10,4 +11,3 @@ import Prelude (String, id, (.))
 
 fail :: String -> Term c s a
 fail = ptraceError . pconstant
-
