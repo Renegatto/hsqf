@@ -22,7 +22,7 @@ import PSQF.Task (ptask)
 gc :: Term c s PInteger
 gc = gCorrect # psingleton (pconstant @Integer 1)
 
-gCorrect :: Term Stat s ('[PInteger] :==> PInteger)
+gCorrect :: Term c s ('[PInteger] :==> PInteger)
 gCorrect = plam $ \(MkFlip x) ->
   plet (pconstant 12) $ \n -> 
     let q = pcon $ MkPPair n n
