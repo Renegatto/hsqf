@@ -21,12 +21,38 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 
 module PSQF.HList where
-import PSQF.Definition
+
+import Data.Data (Proxy (Proxy))
 import Data.Kind (Type)
-import GHC.TypeNats (KnownNat, type (-))
-import USQF
 import GHC.TypeLits (natVal)
-import Data.Data (Proxy(Proxy))
+import GHC.TypeNats (KnownNat, type (-))
+import PSQF.Definition
+  ( PBool (PTrue),
+    PCon (..),
+    PConstant (..),
+    PInteger,
+    PLift (..),
+    PMatch (..),
+    PString,
+    PType,
+    Scope (..),
+    Term (..),
+    declareOperator,
+    mkVar,
+    punsafeCoerce,
+    type (:==>),
+  )
+import SQF
+  ( SQF
+      ( BindLocally,
+        Call,
+        GlobalVar,
+        ListLit,
+        LocalVar,
+        Procedure,
+        Seq
+      ),
+  )
 import GHC.Base (Constraint)
 
 -- FIXME: 'params' must be called with String literals, not with vars identifiers

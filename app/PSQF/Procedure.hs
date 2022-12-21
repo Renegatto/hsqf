@@ -15,10 +15,22 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+
 module PSQF.Procedure where
-import PSQF.Definition
-import USQF (SQF(Procedure, Call, GlobalVar, ListLit, LocalVar, StringLit, UnaryOperator))
+
 import Data.Kind (Constraint)
+import PSQF.Definition
+  ( PBool,
+    PInteger,
+    PString,
+    PType,
+    S,
+    Scope (Expr),
+    Term (..),
+    mkVar,
+    type (:==>),
+  )
+import SQF (SQF (Call, GlobalVar, ListLit, LocalVar, Procedure, StringLit, UnaryOperator))
 import PSQF.HList (term, var)
 
 pprocedure ::

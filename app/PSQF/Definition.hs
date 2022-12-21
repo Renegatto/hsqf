@@ -14,13 +14,13 @@ module PSQF.Definition where
 import Data.Kind (Type)
 import Data.List (intercalate)
 import qualified SQF
-import USQF
+import SQF
+    ( SQF(BinaryOperator, StringLit, NumLit, Call, ListLit, If,
+          GlobalVar, UnaryOperator) )
 import GHC.TypeLits (type (-), natVal)
 import GHC.TypeNats (KnownNat)
 import Data.Data (Proxy(Proxy))
 import Unsafe.Coerce (unsafeCoerce)
--- import HSQF (S,SType)
--- import HSQF qualified
 
 data S
 type PType = S -> Type

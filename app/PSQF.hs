@@ -9,11 +9,39 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 module PSQF where
+
 import PSQF.Definition
+  ( PCon (pcon),
+    PConstant (pconstant),
+    PInteger,
+    PVoid,
+    Scope (Expr, Stat),
+    Term,
+    declareGlobal,
+    type (:==>),
+  )
 import PSQF.HList
-import USQF (SQF(GlobalVar),compile,unNewLine)
-import qualified PSQF.Monadic as P
+  ( Flip (MkFlip),
+    plam,
+    plet,
+    pnil,
+    psingleton,
+    sel,
+    (#),
+    (#:),
+  )
+import SQF (SQF (GlobalVar), compile, unNewLine)
 import PSQF.Api
+  ( PEvent (PFired),
+    PPlayer,
+    addEventHandler,
+    currentvehiclespeed,
+    forEach,
+    punsafeDowncast,
+    setvehicleammo,
+    units,
+  )
+import qualified PSQF.Monadic as P
 import PSQF.Procedure (pprocedure)
 import PSQF.Subtyping (pcontraFirst)
 import PSQF.Task (ptask)

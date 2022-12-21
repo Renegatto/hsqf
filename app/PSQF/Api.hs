@@ -6,9 +6,21 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 module PSQF.Api where
-import PSQF.Definition 
-import PSQF.HList (pnil, PHList)
-import USQF (SQF(ListLit, StringLit, GlobalVar))
+
+import PSQF.Definition
+  ( PCon (..),
+    PInteger,
+    PType,
+    PVoid,
+    Scope (Expr),
+    Term (MkTerm),
+    declareOperator,
+    declareUnary,
+    punsafeCoerce,
+    type (:==>),
+  )
+import PSQF.HList (PHList, pnil)
+import SQF (SQF (GlobalVar, ListLit, StringLit))
 import PSQF.Task (PTask)
 
 

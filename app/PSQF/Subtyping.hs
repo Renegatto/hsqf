@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module PSQF.Subtyping where
 
-import PSQF.Api
+import PSQF.Api ( PSubtype )
 import PSQF.Definition (Term, type (:==>), punsafeCoerce)
 
 step ::

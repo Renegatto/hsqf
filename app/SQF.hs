@@ -13,102 +13,81 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase #-}
-module SQF where
+module SQF (SQF(..),compile,unNewLine) where
 import Data.Kind (Type)
 import Data.List (intercalate)
+import Data.Function (fix)
+
+-- | Untyped (lmao) SQF language
+data SQF
+  = ListLit [SQF]
+  | NumLit Float
+  | StringLit String
+  | UnaryOperator String SQF
+  | BinaryOperator String SQF SQF
+  | Call SQF SQF
+  | LocalVar String
+  | GlobalVar String
+  | Procedure [SQF]
+  | Seq SQF SQF
+  | BindLocally String SQF
+  | Bind String SQF
+  | If SQF SQF SQF
+  deriving Show
+
 nl = '\n'
 eol = [';',nl]
 parens x = "(" <> x <> ")"
-bind ident expr = ident <> " = " <> parens expr <> ";"
+bind ident expr = ident <> " = " <> expr <> ";"
 
 indent n = replicate n ' '
 
-compileBlock lvl statements =
-  let compile stmt = indent lvl <> compileStatement (succ lvl) stmt
-      compiled = intercalate [nl] $ compile <$> statements
+unNewLine :: String -> String
+unNewLine = fmap $ \case
+  '\n' -> ' '
+  x -> x
+
+compileBlock :: (Int -> SQF -> String) -> Int -> [SQF] -> String
+compileBlock compiler lvl statements =
+  let compile' stmt = indent lvl <> compiler (succ lvl) stmt <> eol
+      compiled = foldMap compile' statements
   in "{" <> [nl] <> compiled <> "}"
 
-compileStatement :: Int -> Statement -> String
-compileStatement lvl = \case
+compile :: Int -> SQF -> String
+compile = fix compileWithLessParens
+
+compileWithLessParens :: (Int -> SQF -> String) -> Int -> SQF -> String
+compileWithLessParens self lvl = \case
   Seq st0 st1 -> mconcat
-    [ compileStatement lvl st0, [nl]
-    , compileStatement lvl st1
+    [ self lvl st0, [nl]
+    , indent lvl <> self lvl st1
     ]
   BindLocally name definition ->
-    bind ("private _" <> name) (compileExpr lvl definition)
-  Bind name definition -> bind name (compileExpr lvl definition) 
-  -- optional, makes code less ugly, allows nesting
-  ExprStat procedure -> compileExpr lvl procedure
-
-compileExpr :: Int -> Expression -> String
-compileExpr lvl = \case
+    bind ("private _" <> name) (self lvl definition)
+  Bind name definition -> bind name (self lvl definition) 
   ListLit exprs ->
-    "[" <> intercalate "," (compileExpr lvl <$> exprs) <> "]"
+    "[" <> intercalate "," (self lvl <$> exprs) <> "]"
   NumLit n -> show n
   StringLit str -> ['"'] <> str <> ['"']
-
-  UnaryOperator opVarid arg -> opVarid <> " " <> parens (compileExpr lvl arg)
-  Call fnVarid args -> fnVarid <> " call " <> parens (compileExpr lvl args)
+  UnaryOperator opVarid arg -> parens $
+    opVarid <> " " <>  self lvl arg
+  BinaryOperator op arg0 arg1 -> parens $
+    unwords
+      [ self lvl arg0
+      , op
+      , self lvl arg1
+      ]
+  Call fn args -> self lvl $ BinaryOperator "call" fn args
+  If boolExpr ifTrue ifFalse -> 
+    unwords
+      [ "if"
+      , parens $ self lvl boolExpr
+      , "then{"
+      , self lvl ifTrue
+      , "}else{"
+      , self lvl ifFalse
+      , "};"
+      ]
   LocalVar varid -> "_" <> varid
   GlobalVar varid -> varid
-  Procedure statements -> compileBlock (succ lvl) statements
-
-call :: String -> [Expression] -> Expression
-call varid = Call varid . ListLit
-
-a :: Expression
-a =
-  call
-    "addEventHandler"
-    [ LocalVar "this"
-    , StringLit "fired"
-    , Procedure
-      [ ExprStat
-          ( call "setvehicleammo"
-              [ call "select" [ LocalVar "this", NumLit 0]
-              , NumLit 1
-              ]
-          )
-      ]
-    ]
-
-a #> b = Seq a b
-expr = ExprStat
-
-q :: Statement
-q =
-  BindLocally "reg"
-    ( Procedure
-        [ BindLocally "arty" 
-            . UnaryOperator "vehicle"
-            $ LocalVar "this"
-        , BindLocally "reload" $
-            Procedure
-              [ expr $ UnaryOperator "params" $ ListLit [LocalVar "unit"]
-              ]
-        , expr $ call "setvehicleammo" [NumLit 1]
-        ]
-  )
-  #> ExprStat
-      ( call "forEach"
-          [ Procedure
-              [ expr $ call "_x" [LocalVar "reg"]
-              ]
-          ]
-      )
-
-data Expression
-  = ListLit [Expression]
-  | NumLit Float
-  | StringLit String
-  | UnaryOperator String Expression
-  | Call String Expression
-  | LocalVar String
-  | GlobalVar String
-  | Procedure [Statement]
-
-data Statement
-  = Seq Statement Statement
-  | ExprStat Expression
-  | BindLocally String Expression
-  | Bind String Expression
+  Procedure statements -> compileBlock self (succ lvl) statements
