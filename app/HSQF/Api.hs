@@ -6,7 +6,20 @@
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
 
-module HSQF.Api where
+module HSQF.Api
+  ( PObject,
+    PUnit,
+    PPlayer,
+    PVehicle,
+    PEvent (PFired, PHealed),
+    addEventHandler,
+    currentvehiclespeed,
+    forEach,
+    punsafeDowncast,
+    setvehicleammo,
+    units,
+  )
+where
 
 import HSQF.Language.Common
   ( PCon (..),
@@ -25,6 +38,7 @@ import HSQF.Language.HList (PHList, pnil)
 import HSQF.Language.Subtyping (PSubtype (pupcast))
 import HSQF.Language.Task (PTask)
 import SQF (SQF (GlobalVar, ListLit, StringLit))
+import HSQF.Language.List (PList)
 
 newtype PObject s = MkPObject {getObject :: Term Expr s PObject}
 
@@ -54,12 +68,6 @@ instance PSubtype PVehicle PObject where
 
 punsafeDowncast :: PSubtype a b => Term Expr s b -> Term c s a
 punsafeDowncast = punsafeCoerce
-
-newtype PList (a :: PType) s = MkPList
-  {getPList :: Term Expr s (PList a)}
-
-pempty :: Term c s (PList a)
-pempty = MkTerm $ \_ -> ListLit []
 
 units :: Term Expr s PPlayer -> Term c s (PList PUnit)
 units = declareUnary "units"

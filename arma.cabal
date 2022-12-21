@@ -42,6 +42,7 @@ executable arma
        HSQF.Language.Procedure
        HSQF.Language.Subtyping
        HSQF.Language.Task
+       HSQF.Language.List
        SQF
 
     -- LANGUAGE extensions used by modules in this package.

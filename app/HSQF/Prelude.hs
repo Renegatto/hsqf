@@ -4,6 +4,7 @@ module HSQF.Prelude
     pprocedure,
     module Subtyping,
     module Task,
+    module List,
   )
 where
 
@@ -23,3 +24,8 @@ import HSQF.Language.HList as HList
 import HSQF.Language.Procedure (pprocedure)
 import HSQF.Language.Subtyping as Subtyping
 import HSQF.Language.Task as Task
+import HSQF.Language.List as List (
+    PList,
+    (#::),
+    pempty,
+  )
