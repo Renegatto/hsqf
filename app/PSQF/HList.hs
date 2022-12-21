@@ -80,21 +80,21 @@ instance PMatch (PHList '[a,b,d]) where
     runTerm (f $ MkTup3 (sel @0 xs) (sel @1 xs) (sel @2 xs)) lvl
 
 plam ::
-  forall args b c s.
+  forall args b c c' s.
   PLamL args =>
   (forall s. PPattern (PHList args) s -> Term c s b) ->
-  Term c s (args :==> b)
+  Term c' s (args :==> b)
 plam = plam'
 
 class PLamL args where
   plam' ::
     (forall s. PPattern (PHList args) s -> Term c s b) ->
-    Term c s (args :==> b)
+    Term c' s (args :==> b)
 
 instance PLamL '[a] where
   plam' ::
     (forall s. Flip (Term Expr) a s -> Term c s b) ->
-    Term c s ('[a] :==> b)
+    Term c' s ('[a] :==> b)
   plam' f = MkTerm $ \lvl ->
     let var = LocalVar $ mkVar lvl
     in Procedure
@@ -104,7 +104,7 @@ instance PLamL '[a] where
 instance PLamL '[a,b] where
   plam' ::
     (forall s. PPair a b s -> Term c s d) ->
-    Term c s ('[a,b] :==> d)
+    Term c' s ('[a,b] :==> d)
   plam' f = MkTerm $ \lvl ->
     let var0 = LocalVar $ mkVar lvl
         var1 = LocalVar $ mkVar $ succ lvl
@@ -116,7 +116,7 @@ instance PLamL '[a,b] where
 instance PLamL '[a,b,c] where
   plam' ::
     (forall s. PTup3 a b c s -> Term e s d) ->
-    Term e s ('[a,b,c] :==> d)
+    Term e' s ('[a,b,c] :==> d)
   plam' f = MkTerm $ \lvl ->
     let var = LocalVar . mkVar
         var0 = var lvl
