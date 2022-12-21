@@ -1,6 +1,7 @@
-module PSQF.Monadic ((>>=),(>>),fail) where
-import Prelude (String,id,(.))
-import PSQF.Definition
+module HSQF.Language.Monadic ((>>=), (>>), fail) where
+
+import HSQF.Language.Common (PConstant (pconstant), Term, ptraceError)
+import Prelude (String, id, (.))
 
 (>>=) :: (x -> Term c s a) -> x -> Term c s a
 (>>=) = id
@@ -10,4 +11,3 @@ import PSQF.Definition
 
 fail :: String -> Term c s a
 fail = ptraceError . pconstant
-

@@ -1,50 +1,65 @@
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
-module PSQF.Api where
-import PSQF.Definition 
-import PSQF.HList (pnil, PHList)
-import USQF (SQF(ListLit, StringLit, GlobalVar))
-import PSQF.Task (PTask)
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeOperators #-}
 
+module HSQF.Api where
 
-newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
-newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }
-newtype PPlayer s = MkPPlayer { getPlayer :: Term Expr s PPlayer }
-newtype PVehicle s = MkPVehicle { getVehicle :: Term Expr s PVehicle }
+import HSQF.Language.Common
+  ( PCon (..),
+    PInteger,
+    PType,
+    PVoid,
+    Scope (Expr),
+    Term,
+    declareOperator,
+    declareUnary,
+    punsafeCoerce,
+    type (:==>),
+  )
+import HSQF.Language.Definition (Term (MkTerm))
+import HSQF.Language.HList (PHList, pnil)
+import HSQF.Language.Subtyping (PSubtype (pupcast))
+import HSQF.Language.Task (PTask)
+import SQF (SQF (GlobalVar, ListLit, StringLit))
+
+newtype PObject s = MkPObject {getObject :: Term Expr s PObject}
+
+newtype PUnit s = MkPUnit {getUnit :: Term Expr s PUnit}
+
+newtype PPlayer s = MkPPlayer {getPlayer :: Term Expr s PPlayer}
+
+newtype PVehicle s = MkPVehicle {getVehicle :: Term Expr s PVehicle}
 
 type PEvent :: PType
-data PEvent s =
-  PFired | PHealed
+data PEvent s
+  = PFired
+  | PHealed
 
 instance PCon PEvent where
   pcon PFired = MkTerm $ \_ -> StringLit "fired"
   pcon PHealed = MkTerm $ \_ -> StringLit "healed"
 
--- | PSubtype a b means that a is subtype of b
-class PSubtype a b where
-  pupcast :: Term Expr s a -> Term c s b
 instance PSubtype PUnit PObject where
   pupcast = punsafeCoerce
+
 instance PSubtype PVehicle PUnit where
   pupcast = punsafeCoerce
+
 instance PSubtype PVehicle PObject where
   pupcast = punsafeCoerce
 
 punsafeDowncast :: PSubtype a b => Term Expr s b -> Term c s a
 punsafeDowncast = punsafeCoerce
 
-newtype PList (a :: PType) s = MkPList {getPList :: Term Expr s (PList a)}
-
--- pappend :: Term Expr s (PList a) -> Term Expr s a -> Term c s (PList a)
--- pappend = declareOperator "append"
+newtype PList (a :: PType) s = MkPList
+  {getPList :: Term Expr s (PList a)}
 
 pempty :: Term c s (PList a)
-pempty = MkTerm $ \_ -> ListLit [] 
+pempty = MkTerm $ \_ -> ListLit []
 
 units :: Term Expr s PPlayer -> Term c s (PList PUnit)
 units = declareUnary "units"
@@ -68,7 +83,9 @@ setvehicleammo ::
   Term c s PVoid
 setvehicleammo = declareOperator "setvehicleammo"
 
-addEventHandler :: forall a c s. PSubtype a PObject =>
+addEventHandler ::
+  forall a c s.
+  PSubtype a PObject =>
   Term Expr s a ->
   Term Expr s (PHList '[PEvent, PTask ('[a] :==> PVoid)]) ->
   Term c s PVoid

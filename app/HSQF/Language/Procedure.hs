@@ -1,25 +1,48 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-module PSQF.Procedure where
-import PSQF.Definition
-import USQF (SQF(Procedure, Call, GlobalVar, ListLit, LocalVar, StringLit, UnaryOperator))
+
+module HSQF.Language.Procedure where
+
 import Data.Kind (Constraint)
-import PSQF.HList (term, var)
+import HSQF.Language.Common
+  ( PBool,
+    PInteger,
+    PString,
+    PType,
+    S,
+    Scope (Expr),
+    Term (..),
+    mkVar,
+    type (:==>),
+  )
+import HSQF.Language.Definition (Term (MkTerm, runTerm))
+import HSQF.Language.HList (term, var)
+import SQF
+  ( SQF
+      ( Call,
+        GlobalVar,
+        ListLit,
+        LocalVar,
+        Procedure,
+        StringLit,
+        UnaryOperator
+      ),
+  )
 
 pprocedure ::
   forall (ret :: PType) (c :: Scope) (c' :: Scope) (args :: [PType]) (s :: S).
@@ -33,8 +56,8 @@ class MatchArgs xs b c s where
   type Next xs b c s = r | r -> xs b c s
   nextArg :: Int -> [String] -> Next xs b c s -> SQF
 
-instance MatchArgs xs b c s => MatchArgs (x:xs) b c s where
-  type Next (x:xs) b c s = (Term Expr s x -> Next xs b c s)
+instance MatchArgs xs b c s => MatchArgs (x : xs) b c s where
+  type Next (x : xs) b c s = (Term Expr s x -> Next xs b c s)
   nextArg :: Int -> [String] -> (Term Expr s x -> Next xs b c s) -> SQF
   nextArg lvl vars f =
     nextArg @xs @b @c @s (succ lvl) (mkVar lvl : vars) (f $ term $ var lvl)
@@ -44,11 +67,11 @@ instance MatchArgs '[] b c s where
   nextArg :: Int -> [String] -> Term c s b -> SQF
   nextArg lvl vars result =
     Procedure
-      [ UnaryOperator "params" $ ListLit (StringLit . mappend "_" <$> vars)
-      , runTerm result lvl
+      [ UnaryOperator "params" $ ListLit (StringLit . mappend "_" <$> vars),
+        runTerm result lvl
       ]
 
-inferenceExample = pprocedure @PInteger @_ @_ @'[PInteger,PString,PBool] $ \a b c ->
+inferenceExample = pprocedure @PInteger @_ @_ @'[PInteger, PString, PBool] $ \a b c ->
   a -- inferred
 
 reverseInferenceExample :: _

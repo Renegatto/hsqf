@@ -1,51 +1,86 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
-module PSQF.Definition where
+module HSQF.Language.Common
+  ( -- * Definition
+    type S,
+    type PType,
+    Term,
+    (:==>),
+    (:-->),
+    Scope (Stat, Expr),
+
+    -- * Common
+    expr,
+    unExpr,
+    (##),
+    pif,
+    ptraceError,
+
+    -- * Typeclasses
+    PMatch (PPattern, match),
+    PCon (pcon),
+    PConstant (PConstanted, pconstant),
+    PLift (PLifted),
+    POrd ((#>=), (#<=)),
+    (#==),
+    (#>),
+    (#<),
+
+    -- * Simple built-in datatypes
+    PVoid,
+    PString,
+    PInteger,
+    PBool (PTrue, PFalse),
+    pnot,
+    (#&&),
+    (#||),
+
+    -- * Unsafe operations
+    punsafeCoerce,
+    declareOperator,
+    declareUnary,
+    declareGlobal,
+
+    -- * Misc
+    mkVar,
+  )
+where
 
 import Data.Kind (Type)
-import Data.List (intercalate)
-import qualified SQF
-import USQF
-import GHC.TypeLits (type (-), natVal)
-import GHC.TypeNats (KnownNat)
-import Data.Data (Proxy(Proxy))
+import HSQF.Language.Definition
+  ( PType,
+    S,
+    Scope (..),
+    Term (..),
+    type (:-->),
+    type (:==>),
+  )
+import SQF
+  ( SQF
+      ( BinaryOperator,
+        Call,
+        GlobalVar,
+        If,
+        ListLit,
+        NumLit,
+        StringLit,
+        UnaryOperator
+      ),
+  )
 import Unsafe.Coerce (unsafeCoerce)
--- import HSQF (S,SType)
--- import HSQF qualified
-
-data S
-type PType = S -> Type
-
-type Scope :: Type
-data Scope = Expr | Stat
-
-type ClosedTerm = forall s. Term s
-
-type Term :: Scope -> S -> PType -> Type
-newtype Term c s a = MkTerm { runTerm :: Int -> SQF }
-
--- | SQF Unary Procedure
-type (:-->) :: PType -> PType -> PType
-newtype (:-->) a b s = MkUProcedure
-  { runUProcedure :: forall c. Term c s (a :--> b)}
-
--- | SQF NAry Procedure
-type (:==>) :: [PType] -> PType -> PType
-newtype (:==>) args b s = MkProcedure
-  { runProcedure :: forall c. Term c s (args :==> b)}
 
 (##) :: Term Expr s0 (a :--> b) -> Term Expr s a -> Term c s b
 f ## x = MkTerm $ \lvl ->
-  Call (ListLit [runTerm x lvl]) (runTerm f lvl) 
+  Call (ListLit [runTerm x lvl]) (runTerm f lvl)
 
 -- We need two classes for better type inference
 class (PLifted (PConstanted a) ~ a) => PConstant (a :: Type) where
@@ -55,9 +90,9 @@ class (PLifted (PConstanted a) ~ a) => PConstant (a :: Type) where
 class (PConstanted (PLifted pa) ~ pa) => PLift (pa :: PType) where
   type PLifted pa :: Type
 
-class PCon (a :: PType) where 
+class PCon (a :: PType) where
   pcon :: a s -> Term c s a
- 
+
 class PMatch (a :: PType) where
   type PPattern a :: PType
   match :: Term Expr s a -> (PPattern a s -> Term c s b) -> Term c s b
@@ -70,7 +105,7 @@ pif b success failure = MkTerm $ \lvl ->
   If (runTerm b lvl) (runTerm success lvl) (runTerm failure lvl)
 
 type PInteger :: PType
-newtype PInteger s = MkInteger { runPInteger :: Term Expr s PInteger }
+newtype PInteger s = MkInteger {runPInteger :: Term Expr s PInteger}
 
 _ = pconstant 2 :: Term c s PInteger
 
@@ -86,12 +121,12 @@ instance PConstant Integer where
   pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
 
 type PString :: PType
-newtype PString s = MkString { runPString :: Term Expr s PString }
+newtype PString s = MkString {runPString :: Term Expr s PString}
 
 _ = pconstant "foo" :: Term c s PString
 
 type PVoid :: PType
-newtype PVoid s = MkPVoid { runPVoid :: Term Expr s PVoid }
+newtype PVoid s = MkPVoid {runPVoid :: Term Expr s PVoid}
 
 instance PCon PVoid where
   pcon :: PVoid s -> Term c s PVoid
@@ -103,7 +138,6 @@ instance PConstant () where
   type PConstanted () = PVoid
   pconstant :: () -> Term c s (PConstanted ())
   pconstant _ = MkTerm $ \_ -> StringLit []
-
 
 _ = pconstant () :: Term c s PVoid
 
@@ -133,17 +167,20 @@ a #== b = (a #>= b) #&& (a #<= b)
 (#>) :: POrd a => Term Expr s a -> Term Expr s a -> Term c s PBool
 a #> b = (a #>= b) #&& pnot (a #== b)
 
+(#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+(#<) = (pnot .) . (#>)
+
 class POrd (a :: PType) where
   {-# MINIMAL (#>=), (#<=) #-}
   (#>=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
   (#<=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
 
 instance POrd (a :: PType) where
-   (#>=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
-   (#>=) = declareOperator ">="
+  (#>=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
+  (#>=) = declareOperator ">="
 
-   (#<=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
-   (#<=) = declareOperator ">="
+  (#<=) :: Term Expr s a -> Term Expr s a -> Term c s PBool
+  (#<=) = declareOperator ">="
 
 instance Num (Term Expr s PInteger) where
   (+) :: Term Expr s PInteger -> Term Expr s PInteger -> Term Expr s PInteger
