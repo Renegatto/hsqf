@@ -39,6 +39,7 @@ executable arma
        PSQF.Monadic
        PSQF.Procedure
        PSQF.Api
+       PSQF.Subtyping
        SQF
        USQF
 
