@@ -45,6 +45,7 @@ module HSQF.Language.Common
     mkVar,
     var,
     term,
+    compile,
   )
 where
 
@@ -64,11 +65,14 @@ import SQF
         GlobalVar,
         If,
         ListLit,
+        LocalVar,
         NumLit,
         StringLit,
-        UnaryOperator, LocalVar
+        UnaryOperator
       ),
+    unNewLine,
   )
+import SQF qualified (compile)
 import Unsafe.Coerce (unsafeCoerce)
 
 (##) :: Term 'Expr s0 (a :--> b) -> Term 'Expr s a -> Term c s b
@@ -225,3 +229,6 @@ unExpr = punsafeCoerce
 
 expr :: Term 'Expr s a -> Term 'Expr s a
 expr = id
+
+compile :: Term c s a -> String
+compile = unNewLine . SQF.compile 0 . flip runTerm 0

@@ -1,4 +1,5 @@
 {-# LANGUAGE QualifiedDo #-}
+
 module Examples
   ( someResult,
     someLambda,
@@ -18,7 +19,7 @@ import HSQF.Api
     setvehicleammo,
     units,
   )
-import qualified HSQF.Language.Monadic as P
+import HSQF.Language.Monadic qualified as P
 import HSQF.Prelude
 
 someResult :: Term c s PInteger
@@ -68,7 +69,11 @@ infAmmoForEveryUnitOf player = P.do
       artyAsVehicle `addEventHandler` (event #: reloadAmmo #: pnil)
   giveInfAmmo `forEach` units player
 
+compiled :: String
+compiled = compile $ infAmmoForEveryUnitOf thisPlayer
+
 {-
->>> unNewLine $ compile 0 $ runTerm (reloadAmmoForEveryUnitOf player) 0
-"private _var0 = \"fired\"; private _var1 = {  (params [\"_var2\"]);  private _var3 = {    (params [\"_var4\"]);    (_var4 setvehicleammo 1.0); };   private _var4 = _var2;   (_var4 addEventHandler ([_var0] + ([_var3] + []))); }; (_var1 forEach (units this))"
+>>> compiled
+"private _var0 = \"fired\"; private _var1 = {  (params [\"_var2\"]);  private _var3 = {    (params [\"_var4\"]);    (_var4 setvehicleammo 1.0); };   private _var4 = _var2;   (_var4 addEventHandler ([_var0] + ([_var3] + []))); }; (_var1 forEach (units this));"
+
 -}
