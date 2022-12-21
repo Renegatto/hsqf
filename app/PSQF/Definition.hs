@@ -43,9 +43,9 @@ type (:==>) :: [PType] -> PType -> PType
 newtype (:==>) args b s = MkProcedure
   { runProcedure :: forall c. Term c s (args :==> b)}
 
-(##) :: (forall s0. Term Expr s0 (a :--> b)) -> Term Expr s a -> Term c s b
+(##) :: Term Expr s0 (a :--> b) -> Term Expr s a -> Term c s b
 f ## x = MkTerm $ \lvl ->
-  Call (runTerm f lvl) (runTerm x lvl)
+  Call (ListLit [runTerm x lvl]) (runTerm f lvl) 
 
 -- We need two classes for better type inference
 class (PLifted (PConstanted a) ~ a) => PConstant (a :: Type) where
