@@ -34,6 +34,7 @@ executable arma
     other-modules:
        HSQF
        HSQF.Api
+       HSQF.Prelude
        HSQF.Language.HList
        HSQF.Language.Definition
        HSQF.Language.Common

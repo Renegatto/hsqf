@@ -10,26 +10,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module HSQF where
 
-import HSQF.Language.Common
-  ( PCon (pcon),
-    PConstant (pconstant),
-    PInteger,
-    PVoid,
-    Scope (Expr, Stat),
-    Term,
-    declareGlobal,
-    type (:==>),
-  )
-import HSQF.Language.HList
-  ( Flip (MkFlip),
-    plam,
-    plet,
-    pnil,
-    psingleton,
-    sel,
-    (#),
-    (#:),
-  )
+import HSQF.Prelude
 import SQF (SQF (GlobalVar), compile, unNewLine)
 import HSQF.Api
   ( PEvent (PFired),
@@ -50,10 +31,10 @@ someResult :: Term c s PInteger
 someResult = someLambda # psingleton (pconstant @Integer 1)
 
 someLambda:: Term c s ('[PInteger] :==> PInteger)
-someLambda = plam $ \(MkFlip x) ->
-  plet (pconstant 12) $ \n -> 
-    let fstNumber = sel @0 $ n #: n #: pnil
-    in (fstNumber + x) `currentvehiclespeed` x
+someLambda = pprocedure $ \x -> P.do
+  n <- plet (pconstant 12) 
+  let fstNumber = sel @0 $ n #: n #: pnil
+  (fstNumber + x) `currentvehiclespeed` x
 
 someProcedure:: Term c s ('[PInteger] :==> PInteger)
 someProcedure = pprocedure $ \x ->

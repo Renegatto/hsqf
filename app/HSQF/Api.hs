@@ -23,6 +23,7 @@ import HSQF.Language.HList (PHList, pnil)
 import SQF (SQF (GlobalVar, ListLit, StringLit))
 import HSQF.Language.Task (PTask)
 import HSQF.Language.Definition (Term(MkTerm))
+import HSQF.Language.Subtyping (PSubtype (pupcast))
 
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
 newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }
@@ -37,9 +38,6 @@ instance PCon PEvent where
   pcon PFired = MkTerm $ \_ -> StringLit "fired"
   pcon PHealed = MkTerm $ \_ -> StringLit "healed"
 
--- | PSubtype a b means that a is subtype of b
-class PSubtype a b where
-  pupcast :: Term Expr s a -> Term c s b
 instance PSubtype PUnit PObject where
   pupcast = punsafeCoerce
 instance PSubtype PVehicle PUnit where
