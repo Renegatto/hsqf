@@ -9,6 +9,7 @@ module PSQF.Api where
 import PSQF.Definition 
 import PSQF.HList (pnil, PHList)
 import USQF (SQF(ListLit, StringLit, GlobalVar))
+import PSQF.Task (PTask)
 
 
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
@@ -68,6 +69,6 @@ setvehicleammo = declareOperator "setvehicleammo"
 
 addEventHandler :: forall a c s. PSubtype a PObject =>
   Term Expr s a ->
-  Term Expr s (PHList '[PEvent, ('[a] :==> PVoid)]) ->
+  Term Expr s (PHList '[PEvent, PTask ('[a] :==> PVoid)]) ->
   Term c s PVoid
 addEventHandler = declareOperator "addEventHandler"

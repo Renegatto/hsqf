@@ -16,6 +16,7 @@ import qualified PSQF.Monadic as P
 import PSQF.Api
 import PSQF.Procedure (pprocedure)
 import PSQF.Subtyping (pcontraFirst)
+import PSQF.Task (ptask)
 
 
 gc :: Term c s PInteger
@@ -44,7 +45,7 @@ z = units player
 template :: forall c s. Term Expr s PPlayer -> Term Stat s (PList PVoid)
 template this = P.do
   reg <- plet $ pprocedure @PVoid $ \arty -> P.do
-    reloadAmmo <- plet $ pprocedure @PVoid $ \vehicle ->
+    reloadAmmo <- plet $ ptask $ pprocedure @PVoid $ \vehicle ->
       vehicle `setvehicleammo` pconstant @Integer 1
     veh <- plet $ punsafeDowncast arty
     veh `addEventHandler` (pcon PFired #: reloadAmmo #: pnil)
