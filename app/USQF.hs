@@ -13,7 +13,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase #-}
-module USQF (SQF(..),compile) where
+module USQF (SQF(..),compile,unNewLine) where
 import Data.Kind (Type)
 import Data.List (intercalate)
 import SQF qualified (Statement)
@@ -41,6 +41,11 @@ parens x = "(" <> x <> ")"
 bind ident expr = ident <> " = " <> parens expr <> ";"
 
 indent n = replicate n ' '
+
+unNewLine :: String -> String
+unNewLine = fmap $ \case
+  '\n' -> ' '
+  x -> x
 
 compileBlock :: Int -> [SQF] -> String
 compileBlock lvl statements =
