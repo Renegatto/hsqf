@@ -55,10 +55,11 @@ currentvehiclespeed ::
   Term c s PInteger
 currentvehiclespeed = declareOperator "currentvehiclespeed"
 
+-- | Applies CODE to every element of array and returns last result
 forEach ::
   Term Expr s ('[a] :==> b) ->
   Term Expr s (PList a) ->
-  Term c s (PList b)
+  Term c s b
 forEach = declareOperator "forEach"
 
 setvehicleammo ::
