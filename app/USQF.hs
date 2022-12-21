@@ -17,6 +17,7 @@ module USQF (SQF(..),compile,unNewLine) where
 import Data.Kind (Type)
 import Data.List (intercalate)
 import SQF qualified (Statement)
+import Data.Function (fix)
 
 -- | Untyped (lmao) SQF language
 data SQF
@@ -38,7 +39,7 @@ data SQF
 nl = '\n'
 eol = [';',nl]
 parens x = "(" <> x <> ")"
-bind ident expr = ident <> " = " <> parens expr <> ";"
+bind ident expr = ident <> " = " <> expr <> ";"
 
 indent n = replicate n ' '
 
@@ -47,43 +48,47 @@ unNewLine = fmap $ \case
   '\n' -> ' '
   x -> x
 
-compileBlock :: Int -> [SQF] -> String
-compileBlock lvl statements =
-  let compile' stmt = indent lvl <> compile (succ lvl) stmt <> eol
+compileBlock :: (Int -> SQF -> String) -> Int -> [SQF] -> String
+compileBlock compiler lvl statements =
+  let compile' stmt = indent lvl <> compiler (succ lvl) stmt <> eol
       compiled = foldMap compile' statements
   in "{" <> [nl] <> compiled <> "}"
 
 compile :: Int -> SQF -> String
-compile lvl = \case
+compile = fix compileWithLessParens
+
+compileWithLessParens :: (Int -> SQF -> String) -> Int -> SQF -> String
+compileWithLessParens self lvl = \case
   Seq st0 st1 -> mconcat
-    [ compile lvl st0, [nl]
-    , indent lvl <> compile lvl st1
+    [ self lvl st0, [nl]
+    , indent lvl <> self lvl st1
     ]
   BindLocally name definition ->
-    bind ("private _" <> name) (compile lvl definition)
-  Bind name definition -> bind name (compile lvl definition) 
+    bind ("private _" <> name) (self lvl definition)
+  Bind name definition -> bind name (self lvl definition) 
   ListLit exprs ->
-    "[" <> intercalate "," (compile lvl <$> exprs) <> "]"
+    "[" <> intercalate "," (self lvl <$> exprs) <> "]"
   NumLit n -> show n
   StringLit str -> ['"'] <> str <> ['"']
-  UnaryOperator opVarid arg -> opVarid <> " " <> parens (compile lvl arg)
-  BinaryOperator op arg0 arg1 ->
+  UnaryOperator opVarid arg -> parens $
+    opVarid <> " " <>  self lvl arg
+  BinaryOperator op arg0 arg1 -> parens $
     unwords
-      [ parens $ compile lvl arg0
+      [ self lvl arg0
       , op
-      , parens $ compile lvl arg1
+      , self lvl arg1
       ]
-  Call fn args -> compile lvl $ BinaryOperator "call" fn args
-  If boolExpr ifTrue ifFalse ->
+  Call fn args -> self lvl $ BinaryOperator "call" fn args
+  If boolExpr ifTrue ifFalse -> 
     unwords
       [ "if"
-      , parens $ compile lvl boolExpr
+      , parens $ self lvl boolExpr
       , "then{"
-      , compile lvl ifTrue
+      , self lvl ifTrue
       , "}else{"
-      , compile lvl ifFalse
+      , self lvl ifFalse
       , "};"
       ]
   LocalVar varid -> "_" <> varid
   GlobalVar varid -> varid
-  Procedure statements -> compileBlock (succ lvl) statements
+  Procedure statements -> compileBlock self (succ lvl) statements
