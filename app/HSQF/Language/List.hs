@@ -1,6 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-
 module HSQF.Language.List
   ( PList,
     pcons,

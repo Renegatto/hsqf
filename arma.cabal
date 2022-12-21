@@ -28,8 +28,34 @@ extra-source-files: CHANGELOG.md
 executable arma
     main-is:          Main.hs
     default-extensions:
-      NoStarIsType
       BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      EmptyCase
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      GeneralizedNewtypeDeriving
+      HexFloatLiterals
+      InstanceSigs
+      ImportQualifiedPost
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      NumericUnderscores
+      ScopedTypeVariables
+      StandaloneDeriving
+      StandaloneKindSignatures
+      TupleSections
+      TypeApplications
+      TypeOperators
+      TypeSynonymInstances
     -- Modules included in this executable, other than Main.
     other-modules:
        Examples
