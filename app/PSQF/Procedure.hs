@@ -17,7 +17,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 module PSQF.Procedure where
 import PSQF.Definition
-import USQF (SQF(Procedure, Call, GlobalVar, ListLit, LocalVar, StringLit))
+import USQF (SQF(Procedure, Call, GlobalVar, ListLit, LocalVar, StringLit, UnaryOperator))
 import Data.Kind (Constraint)
 import PSQF.HList (term, var)
 
@@ -68,7 +68,7 @@ instance MatchArgs '[] b c s where
   nextArg :: Int -> [String] -> Term c s b -> SQF
   nextArg lvl vars result =
     Procedure
-      [ Call (GlobalVar "params") $ ListLit (StringLit <$> vars)
+      [ UnaryOperator "params" $ ListLit (StringLit . mappend "_" <$> vars)
       , runTerm result lvl
       ]
 
