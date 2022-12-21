@@ -17,9 +17,6 @@ import PSQF.Api
 import PSQF.Procedure (pprocedure)
 import PSQF.Subtyping (pcontraFirst)
 
-currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
-currentvehiclespeed =
-  MkTerm $ \_ -> GlobalVar "currentvehiclespeed"
 
 gc :: Term c s PInteger
 gc = gCorrect # psingleton (pconstant @Integer 1)
@@ -29,8 +26,7 @@ gCorrect = plam $ \(MkFlip x) ->
   plet (pconstant 12) $ \n -> 
     let q = pcon $ MkPPair n n
         q0 = sel @0 $ toHList q
-    in currentvehiclespeed # toHList (pcon $ MkPPair (q0 + x) x)
-
+    in (q0 + x) `currentvehiclespeed` x
 
 -- g :: Term Stat s ('[PInteger] :==> PInteger)
 -- g = plam @'[PInteger] $ \(MkFlip x) ->
@@ -43,26 +39,16 @@ q = plet (pconstant 12) $ \n -> pcon $ MkPPair n n
 player = declareGlobal "this" :: Term Expr s PPlayer
 
 z :: Term c s (PList PUnit)
-z = units ## player
-
-forEach :: Term c s ('[ '[a] :==> b, PList a] :==> PList b)
-forEach = declareGlobal "forEach"
-
-setvehicleammo :: Term c s ('[PVehicle, PInteger] :==> PVoid)
-setvehicleammo = declareGlobal "setvehicleammo"
-
-addEventHandler ::
-  forall a c s. PSubtype a PObject => Term c s ('[a, PEvent, '[a] :==> PVoid] :==> PVoid)
-addEventHandler = declareGlobal "addEventHandler"
+z = units player
 
 template :: forall c s. Term Expr s PPlayer -> Term Stat s (PList PVoid)
 template this = P.do
   reg <- plet $ pprocedure @PVoid $ \arty -> P.do
     reloadAmmo <- plet $ pprocedure @PVoid $ \vehicle ->
-      setvehicleammo # (vehicle #: pconstant @Integer 1 #: pnil)
+      vehicle `setvehicleammo` pconstant @Integer 1
     veh <- plet $ punsafeDowncast arty
-    addEventHandler # (veh #: pcon PFired #: reloadAmmo #: pnil)
-  forEach # (reg #: (units ## this) #: pnil)
+    veh `addEventHandler` (pcon PFired #: reloadAmmo #: pnil)
+  reg `forEach` units this
 
 {-
 >>> unNewLine $ compile 0 $ runTerm (template player) 0

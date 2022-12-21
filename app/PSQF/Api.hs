@@ -3,10 +3,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 module PSQF.Api where
 import PSQF.Definition 
-import PSQF.HList (pnil)
-import USQF (SQF(ListLit, StringLit))
+import PSQF.HList (pnil, PHList)
+import USQF (SQF(ListLit, StringLit, GlobalVar))
 
 
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
@@ -43,5 +45,29 @@ newtype PList (a :: PType) s = MkPList {getPList :: Term Expr s (PList a)}
 pempty :: Term c s (PList a)
 pempty = MkTerm $ \_ -> ListLit [] 
 
-units :: Term c s (PPlayer :--> PList PUnit)
-units = declareGlobal "units"
+units :: Term Expr s PPlayer -> Term c s (PList PUnit)
+units = declareUnary "units"
+
+currentvehiclespeed ::
+  Term Expr s PInteger ->
+  Term Expr s PInteger ->
+  Term c s PInteger
+currentvehiclespeed = declareOperator "currentvehiclespeed"
+
+forEach ::
+  Term Expr s ('[a] :==> b) ->
+  Term Expr s (PList a) ->
+  Term c s (PList b)
+forEach = declareOperator "forEach"
+
+setvehicleammo ::
+  Term Expr s PVehicle ->
+  Term Expr s PInteger ->
+  Term c s PVoid
+setvehicleammo = declareOperator "setvehicleammo"
+
+addEventHandler :: forall a c s. PSubtype a PObject =>
+  Term Expr s a ->
+  Term Expr s (PHList '[PEvent, ('[a] :==> PVoid)]) ->
+  Term c s PVoid
+addEventHandler = declareOperator "addEventHandler"
