@@ -128,9 +128,9 @@ instance PLamL '[a,b,c] where
       , runTerm (f (MkTup3 (term var0) (term var1) (term var2))) (succ lvl)
       ]
  
-(#) :: (forall s'. Term c s' (args :==> b)) -> Term Expr s (PHList args) -> Term c' s b
+(#) :: Term Expr s (args :==> b) -> Term Expr s (PHList args) -> Term c s b
 f # x = MkTerm $ \lvl ->
-  Call (runTerm f lvl) (runTerm x lvl)
+  Call (runTerm x lvl) (runTerm f lvl)
 
 newtype PHList (xs :: [PType]) s = MkHList
   { runHList :: Term Expr s (PHList xs)}
