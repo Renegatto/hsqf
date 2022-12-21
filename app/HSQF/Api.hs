@@ -7,7 +7,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module HSQF.Api where
 
-import HSQF.Common
+import HSQF.Language.Common
   ( PCon (..),
     PInteger,
     PType,
@@ -19,10 +19,10 @@ import HSQF.Common
     punsafeCoerce,
     type (:==>),
   )
-import HSQF.HList (PHList, pnil)
+import HSQF.Language.HList (PHList, pnil)
 import SQF (SQF (GlobalVar, ListLit, StringLit))
-import HSQF.Task (PTask)
-import HSQF.Definition (Term(MkTerm))
+import HSQF.Language.Task (PTask)
+import HSQF.Language.Definition (Term(MkTerm))
 
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
 newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }

@@ -33,14 +33,14 @@ executable arma
     -- Modules included in this executable, other than Main.
     other-modules:
        HSQF
-       HSQF.HList
-       HSQF.Definition
-       HSQF.Common
-       HSQF.Monadic
-       HSQF.Procedure
        HSQF.Api
-       HSQF.Subtyping
-       HSQF.Task
+       HSQF.Language.HList
+       HSQF.Language.Definition
+       HSQF.Language.Common
+       HSQF.Language.Monadic
+       HSQF.Language.Procedure
+       HSQF.Language.Subtyping
+       HSQF.Language.Task
        SQF
 
     -- LANGUAGE extensions used by modules in this package.

@@ -9,7 +9,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE PolyKinds #-}
 
-module HSQF.Definition
+module HSQF.Language.Definition
   ( S,
     PType,
     Term (MkTerm, runTerm),

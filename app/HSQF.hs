@@ -10,7 +10,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module HSQF where
 
-import HSQF.Common
+import HSQF.Language.Common
   ( PCon (pcon),
     PConstant (pconstant),
     PInteger,
@@ -20,7 +20,7 @@ import HSQF.Common
     declareGlobal,
     type (:==>),
   )
-import HSQF.HList
+import HSQF.Language.HList
   ( Flip (MkFlip),
     plam,
     plet,
@@ -41,10 +41,10 @@ import HSQF.Api
     setvehicleammo,
     units,
   )
-import qualified HSQF.Monadic as P
-import HSQF.Procedure (pprocedure)
-import HSQF.Subtyping (pcontraFirst)
-import HSQF.Task (ptask)
+import qualified HSQF.Language.Monadic as P
+import HSQF.Language.Procedure (pprocedure)
+import HSQF.Language.Subtyping (pcontraFirst)
+import HSQF.Language.Task (ptask)
 
 someResult :: Term c s PInteger
 someResult = someLambda # psingleton (pconstant @Integer 1)
