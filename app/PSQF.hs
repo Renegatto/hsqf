@@ -11,10 +11,11 @@
 module PSQF where
 import PSQF.Definition
 import PSQF.HList
-import USQF (SQF(GlobalVar),compile)
+import USQF (SQF(GlobalVar),compile,unNewLine)
 import qualified PSQF.Monadic as P
 import PSQF.Api
 import PSQF.Procedure (pprocedure)
+import PSQF.Subtyping (pcontraFirst)
 
 currentvehiclespeed :: Term c s ('[PInteger,PInteger] :==> PInteger)
 currentvehiclespeed =
@@ -63,10 +64,9 @@ template this = P.do
     addEventHandler # (veh #: pcon PFired #: reloadAmmo #: pnil)
   forEach # (reg #: (units ## this) #: pnil)
 
-
 {-
->>> compile 0 $ runTerm (template player) 0
-"private _var0 = ({\n (params) call ([_var1]);\n private _var2 = ({\n   (params) call ([_var3]);\n   (setvehicleammo) call (([_var3]) + (([1.0]) + ([])));\n});\n  private _var3 = (_var1);\n  (addEventHandler) call (([_var3]) + (([\"fired\"]) + (([_var2]) + ([]))));\n});\n(forEach) call (([_var0]) + (([(units) call (this)]) + ([])))"
+>>> unNewLine $ compile 0 $ runTerm (template player) 0
+"private _var0 = ({  (params) call ([\"var1\"]);  private _var2 = ({    (params) call ([\"var3\"]);    (setvehicleammo) call (([_var3]) + (([1.0]) + ([]))); });   private _var3 = (_var1);   (addEventHandler) call (([_var3]) + (([\"fired\"]) + (([_var2]) + ([])))); }); (forEach) call (([_var0]) + (([(units) call (this)]) + ([])))"
 
 private _var0 = {
  params call [_var1];
