@@ -17,7 +17,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 module PSQF.Procedure where
 import PSQF.Definition
-import USQF (SQF(Procedure, Call, GlobalVar, ListLit, LocalVar))
+import USQF (SQF(Procedure, Call, GlobalVar, ListLit, LocalVar, StringLit))
 import Data.Kind (Constraint)
 import PSQF.HList (term, var)
 
