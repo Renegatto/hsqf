@@ -9,20 +9,19 @@ module HSQF.Language.HList where
 
 import Data.Data (Proxy (Proxy))
 import Data.Kind (Type)
-import GHC.Base (Constraint)
 import GHC.TypeLits (natVal)
 import GHC.TypeNats (KnownNat, type (-))
 import HSQF.Language.Common
   ( PBool (PTrue),
-    PCon (..),
-    PConstant (..),
+    PCon (pcon),
+    PConstant (PConstanted, pconstant),
     PInteger,
-    PLift (..),
-    PMatch (..),
+    PLift (PLifted),
+    PMatch (PPattern,match),
     PString,
     PType,
-    Scope (..),
-    Term (..),
+    Scope (Expr,Stat),
+    Term,
     declareOperator,
     mkVar,
     punsafeCoerce,
@@ -44,9 +43,9 @@ import SQF
 -- FIXME: 'params' must be called with String literals, not with vars identifiers
 
 type PPair :: PType -> PType -> PType
-data PPair a b s = MkPPair (Term Expr s a) (Term Expr s b)
+data PPair a b s = MkPPair (Term 'Expr s a) (Term 'Expr s b)
 
-plet :: Term Expr s a -> (Term Expr s a -> Term c s b) -> Term Stat s b
+plet :: Term 'Expr s a -> (Term 'Expr s a -> Term c s b) -> Term Stat s b
 plet def scope = MkTerm $ \lvl ->
   let varid = mkVar lvl
       def' = runTerm def (succ lvl)
@@ -54,7 +53,7 @@ plet def scope = MkTerm $ \lvl ->
    in Seq (BindLocally (mkVar lvl) def') scope'
 
 type PTup3 :: PType -> PType -> PType -> PType
-data PTup3 a b d s = MkTup3 (Term Expr s a) (Term Expr s b) (Term Expr s d)
+data PTup3 a b d s = MkTup3 (Term 'Expr s a) (Term 'Expr s b) (Term 'Expr s d)
 
 type Flip :: (a -> b -> Type) -> b -> a -> Type
 newtype Flip f a b = MkFlip (f b a)
@@ -69,43 +68,43 @@ instance PCon (PPair a b) where
 
 instance PMatch (PPair a b) where
   type PPattern (PPair a b) = PPair a b
-  match :: Term Expr s (PPair a b) -> (PPair a b s -> Term c s d) -> Term c s d
+  match :: Term 'Expr s (PPair a b) -> (PPair a b s -> Term c s d) -> Term c s d
   match (ppairToList -> p) f = MkTerm $ \lvl ->
     runTerm (f (MkPPair (sel @0 p) (sel @1 p))) lvl
 
 instance PMatch (PHList '[a]) where
-  type PPattern (PHList '[a]) = Flip (Term Expr) a
-  match :: Term Expr s (PHList '[a]) -> (Flip (Term Expr) a s -> Term c s d) -> Term c s d
+  type PPattern (PHList '[a]) = Flip (Term 'Expr) a
+  match :: Term 'Expr s (PHList '[a]) -> (Flip (Term 'Expr) a s -> Term c s d) -> Term c s d
   match xs f = MkTerm $ \lvl ->
     runTerm (f $ MkFlip $ sel @0 xs) lvl
 
 instance PMatch (PHList '[a, b]) where
   type PPattern (PHList '[a, b]) = PPair a b
-  match :: Term Expr s (PHList '[a, b]) -> (PPair a b s -> Term c s d) -> Term c s d
+  match :: Term 'Expr s (PHList '[a, b]) -> (PPair a b s -> Term c s d) -> Term c s d
   match xs f = MkTerm $ \lvl ->
     runTerm (f $ MkPPair (getFst xs) (getSnd xs)) lvl
 
 instance PMatch (PHList '[a, b, d]) where
   type PPattern (PHList '[a, b, d]) = PTup3 a b d
-  match :: Term Expr s (PHList '[a, b, d]) -> (PTup3 a b d s -> Term c s x) -> Term c s x
+  match :: Term 'Expr s (PHList '[a, b, d]) -> (PTup3 a b d s -> Term c s x) -> Term c s x
   match xs f = MkTerm $ \lvl ->
     runTerm (f $ MkTup3 (sel @0 xs) (sel @1 xs) (sel @2 xs)) lvl
 
 plam ::
   forall args b c c' s.
   PLamL args =>
-  (forall s. PPattern (PHList args) s -> Term c s b) ->
+  (forall s0. PPattern (PHList args) s0 -> Term c s0 b) ->
   Term c' s (args :==> b)
 plam = plam'
 
 class PLamL args where
   plam' ::
-    (forall s. PPattern (PHList args) s -> Term c s b) ->
+    (forall s0. PPattern (PHList args) s0 -> Term c s0 b) ->
     Term c' s (args :==> b)
 
 instance PLamL '[a] where
   plam' ::
-    (forall s. Flip (Term Expr) a s -> Term c s b) ->
+    (forall s0. Flip (Term 'Expr) a s0 -> Term c s0 b) ->
     Term c' s ('[a] :==> b)
   plam' f = MkTerm $ \lvl ->
     let var = LocalVar $ mkVar lvl
@@ -116,7 +115,7 @@ instance PLamL '[a] where
 
 instance PLamL '[a, b] where
   plam' ::
-    (forall s. PPair a b s -> Term c s d) ->
+    (forall s0. PPair a b s0 -> Term c s0 d) ->
     Term c' s ('[a, b] :==> d)
   plam' f = MkTerm $ \lvl ->
     let var0 = LocalVar $ mkVar lvl
@@ -129,7 +128,7 @@ instance PLamL '[a, b] where
 
 instance PLamL '[a, b, c] where
   plam' ::
-    (forall s. PTup3 a b c s -> Term e s d) ->
+    (forall s0. PTup3 a b c s0 -> Term e s0 d) ->
     Term e' s ('[a, b, c] :==> d)
   plam' f = MkTerm $ \lvl ->
     let var = LocalVar . mkVar
@@ -142,12 +141,12 @@ instance PLamL '[a, b, c] where
             runTerm (f (MkTup3 (term var0) (term var1) (term var2))) (succ lvl)
           ]
 
-(#) :: Term Expr s (args :==> b) -> Term Expr s (PHList args) -> Term c s b
+(#) :: Term 'Expr s (args :==> b) -> Term 'Expr s (PHList args) -> Term c s b
 f # x = MkTerm $ \lvl ->
   Call (runTerm x lvl) (runTerm f lvl)
 
 newtype PHList (xs :: [PType]) s = MkHList
-  {runHList :: Term Expr s (PHList xs)}
+  {runHList :: Term 'Expr s (PHList xs)}
 
 instance (PLift pa, PLift pb) => PLift (PHList '[pa, pb]) where
   type PLifted (PHList '[pa, pb]) = (PLifted pa, PLifted pb)
@@ -168,24 +167,24 @@ ppairList a b = MkTerm $ \lvl ->
 -- | Not safe!
 select ::
   forall xs x c s.
-  Term Expr s (PHList xs) ->
-  Term Expr s PInteger ->
+  Term 'Expr s (PHList xs) ->
+  Term 'Expr s PInteger ->
   Term c s x
 select = declareOperator "select"
 
 sel ::
   forall n (xs :: [PType]) c s.
   KnownNat n =>
-  Term Expr s (PHList xs) ->
+  Term 'Expr s (PHList xs) ->
   Term c s (Nth n xs)
 sel xs = xs `select` pconstant @Integer index
   where
     index = fromIntegral $ natVal $ Proxy @n
 
-getFst :: forall c s a b. Term Expr s (PHList '[a, b]) -> Term c s a
+getFst :: forall c s a b. Term 'Expr s (PHList '[a, b]) -> Term c s a
 getFst = sel @0
 
-getSnd :: forall c s a b. Term Expr s (PHList '[a, b]) -> Term c s b
+getSnd :: forall c s a b. Term 'Expr s (PHList '[a, b]) -> Term c s b
 getSnd = sel @1
 
 class ToHList (a :: PType) where
@@ -214,13 +213,13 @@ type family (xs :: [k]) :++: (ys :: [k]) :: [k] where
   '[] :++: ys = ys
   (x ': xs) :++: ys = x ': (xs :++: ys)
 
-pconcat :: Term Expr s (PHList xs) -> Term Expr s (PHList ys) -> Term c s (PHList (xs :++: ys))
+pconcat :: Term 'Expr s (PHList xs) -> Term 'Expr s (PHList ys) -> Term c s (PHList (xs :++: ys))
 pconcat = declareOperator "+"
 
 pnil :: Term c s (PHList '[])
 pnil = MkTerm $ \_ -> ListLit []
 
-pcons :: Term Expr s x -> Term Expr s (PHList xs) -> Term c s (PHList (x : xs))
+pcons :: Term 'Expr s x -> Term 'Expr s (PHList xs) -> Term c s (PHList (x : xs))
 pcons = pconcat . psingleton
 
 (#:) :: Term 'Expr s x -> Term 'Expr s (PHList xs) -> Term c s (PHList (x : xs))
@@ -234,5 +233,5 @@ var = LocalVar . mkVar
 term :: SQF -> Term c s a
 term = MkTerm . const
 
-exampleList :: Term Expr s (PHList '[PInteger, PBool, PString])
+exampleList :: Term 'Expr s (PHList '[PInteger, PBool, PString])
 exampleList = pconstant 4 #: pcon PTrue #: pconstant "214" #: pnil

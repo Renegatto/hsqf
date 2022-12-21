@@ -73,6 +73,11 @@ executable arma
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
+    ghc-options:
+      -Wall -Wcompat -Werror=incomplete-uni-patterns
+      -Werror=incomplete-record-updates -Wredundant-constraints
+      -Wmissing-export-lists -Wmissing-deriving-strategies
+
     build-depends:    base 
     -- , plutarch-core
     hs-source-dirs:   app

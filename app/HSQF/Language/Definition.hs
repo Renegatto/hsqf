@@ -37,8 +37,6 @@ type PType = S -> Type
 type Scope :: Type
 data Scope = Expr | Stat
 
-type ClosedTerm = forall s. Term s
-
 type Term :: Scope -> S -> PType -> Type
 newtype Term c s a = MkTerm {runTerm :: Int -> SQF}
 

@@ -19,11 +19,7 @@ import HSQF.Api
     units,
   )
 import qualified HSQF.Language.Monadic as P
-import HSQF.Language.Procedure (pprocedure)
-import HSQF.Language.Subtyping (pcontraFirst)
-import HSQF.Language.Task (ptask)
 import HSQF.Prelude
-import SQF (SQF (GlobalVar), compile, unNewLine)
 
 someResult :: Term c s PInteger
 someResult = someLambda # psingleton (pconstant @Integer 1)
@@ -45,9 +41,9 @@ thisPlayer = declareGlobal "this"
 
 -- | Units means to be artillery
 infAmmoForEveryUnitOf ::
-  forall c s.
-  Term Expr s PPlayer ->
-  Term Stat s PVoid -- All this term is a statement, because of use of `plet`
+  forall s.
+  Term 'Expr s PPlayer ->
+  Term 'Stat s PVoid -- All this term is a statement, because of use of `plet`
 infAmmoForEveryUnitOf player = P.do
   event <- plet $ pcon PFired
   giveInfAmmo <- plet $
