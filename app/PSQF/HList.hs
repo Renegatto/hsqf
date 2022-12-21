@@ -152,15 +152,19 @@ ppairList a b = MkTerm $ \lvl ->
   ListLit [runTerm a lvl, runTerm b lvl]
 
 -- | Not safe!
-select :: forall xs x c s. Term c s (PHList '[PInteger, PHList xs] :--> x)
-select = MkTerm $ \_ -> GlobalVar "select" 
+select ::
+  forall xs x c s.
+  Term Expr s (PHList xs) ->
+  Term Expr s PInteger ->
+  Term c s x
+select = declareOperator "select" 
 
 sel ::
   forall n (xs :: [PType]) c s.
   KnownNat n =>
   Term Expr s (PHList xs) ->
   Term c s (Nth n xs)
-sel xs = select ## ppairList (pconstant @Integer index) xs
+sel xs = xs `select` pconstant @Integer index
   where
     index = fromIntegral $ natVal $ Proxy @n
 
@@ -189,7 +193,8 @@ type family Nth n (xs :: [k]) where
   Nth n (_:xs) = Nth (n - 1) xs 
 
 type PForgetTerm :: Scope -> PType
-data PForgetTerm c s = forall a. MkPForgetTerm {recallTerm :: Term c s a}
+data PForgetTerm c s = forall a.
+  MkPForgetTerm {recallTerm :: Term c s a}
 
 type family (xs :: [k]) :++: (ys :: [k]) :: [k] where
   '[] :++: ys = ys
