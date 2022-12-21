@@ -1,5 +1,5 @@
-module PSQF.Monadic ((>>=),(>>),fail) where
-import PSQF.Common (PConstant (pconstant), Term, ptraceError)
+module HSQF.Monadic ((>>=),(>>),fail) where
+import HSQF.Common (PConstant (pconstant), Term, ptraceError)
 import Prelude (String, id, (.))
 
 (>>=) :: (x -> Term c s a) -> x -> Term c s a

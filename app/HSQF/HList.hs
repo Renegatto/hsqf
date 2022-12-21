@@ -20,14 +20,14 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 
-module PSQF.HList where
+module HSQF.HList where
 
 import Data.Data (Proxy (Proxy))
 import Data.Kind (Type)
 import GHC.Base (Constraint)
 import GHC.TypeLits (natVal)
 import GHC.TypeNats (KnownNat, type (-))
-import PSQF.Common
+import HSQF.Common
   ( PBool (PTrue),
     PCon (..),
     PConstant (..),
@@ -43,7 +43,7 @@ import PSQF.Common
     punsafeCoerce,
     type (:==>),
   )
-import PSQF.Definition (Term (MkTerm, runTerm))
+import HSQF.Definition (Term (MkTerm, runTerm))
 import SQF
   ( SQF
       ( BindLocally,

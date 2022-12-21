@@ -9,7 +9,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE PolyKinds #-}
 
-module PSQF.Common
+module HSQF.Common
   ( -- * Definition
     type S,
     type PType,
@@ -56,7 +56,7 @@ module PSQF.Common
 where
 
 import Data.Kind (Type)
-import PSQF.Definition
+import HSQF.Definition
   ( PType,
     S,
     Scope (..),

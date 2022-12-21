@@ -16,10 +16,10 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module PSQF.Procedure where
+module HSQF.Procedure where
 
 import Data.Kind (Constraint)
-import PSQF.Common
+import HSQF.Common
   ( PBool,
     PInteger,
     PString,
@@ -30,8 +30,8 @@ import PSQF.Common
     mkVar,
     type (:==>),
   )
-import PSQF.Definition (Term (MkTerm, runTerm))
-import PSQF.HList (term, var)
+import HSQF.Definition (Term (MkTerm, runTerm))
+import HSQF.HList (term, var)
 import SQF
   ( SQF
       ( Call,

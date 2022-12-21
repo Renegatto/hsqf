@@ -5,9 +5,9 @@
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
-module PSQF.Api where
+module HSQF.Api where
 
-import PSQF.Common
+import HSQF.Common
   ( PCon (..),
     PInteger,
     PType,
@@ -19,10 +19,10 @@ import PSQF.Common
     punsafeCoerce,
     type (:==>),
   )
-import PSQF.HList (PHList, pnil)
+import HSQF.HList (PHList, pnil)
 import SQF (SQF (GlobalVar, ListLit, StringLit))
-import PSQF.Task (PTask)
-import PSQF.Definition (Term(MkTerm))
+import HSQF.Task (PTask)
+import HSQF.Definition (Term(MkTerm))
 
 newtype PObject s = MkPObject { getObject :: Term Expr s PObject }
 newtype PUnit s = MkPUnit { getUnit :: Term Expr s PUnit }

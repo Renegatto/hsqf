@@ -32,15 +32,15 @@ executable arma
       BangPatterns
     -- Modules included in this executable, other than Main.
     other-modules:
-       PSQF
-       PSQF.HList
-       PSQF.Definition
-       PSQF.Common
-       PSQF.Monadic
-       PSQF.Procedure
-       PSQF.Api
-       PSQF.Subtyping
-       PSQF.Task
+       HSQF
+       HSQF.HList
+       HSQF.Definition
+       HSQF.Common
+       HSQF.Monadic
+       HSQF.Procedure
+       HSQF.Api
+       HSQF.Subtyping
+       HSQF.Task
        SQF
 
     -- LANGUAGE extensions used by modules in this package.

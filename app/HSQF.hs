@@ -8,9 +8,9 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
-module PSQF where
+module HSQF where
 
-import PSQF.Common
+import HSQF.Common
   ( PCon (pcon),
     PConstant (pconstant),
     PInteger,
@@ -20,7 +20,7 @@ import PSQF.Common
     declareGlobal,
     type (:==>),
   )
-import PSQF.HList
+import HSQF.HList
   ( Flip (MkFlip),
     plam,
     plet,
@@ -31,7 +31,7 @@ import PSQF.HList
     (#:),
   )
 import SQF (SQF (GlobalVar), compile, unNewLine)
-import PSQF.Api
+import HSQF.Api
   ( PEvent (PFired),
     PPlayer,
     addEventHandler,
@@ -41,10 +41,10 @@ import PSQF.Api
     setvehicleammo,
     units,
   )
-import qualified PSQF.Monadic as P
-import PSQF.Procedure (pprocedure)
-import PSQF.Subtyping (pcontraFirst)
-import PSQF.Task (ptask)
+import qualified HSQF.Monadic as P
+import HSQF.Procedure (pprocedure)
+import HSQF.Subtyping (pcontraFirst)
+import HSQF.Task (ptask)
 
 someResult :: Term c s PInteger
 someResult = someLambda # psingleton (pconstant @Integer 1)

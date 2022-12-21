@@ -4,11 +4,11 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module PSQF.Subtyping where
+module HSQF.Subtyping where
 
-import PSQF.Api ( PSubtype )
-import PSQF.Common (punsafeCoerce)
-import PSQF.Definition (Term, type (:==>))
+import HSQF.Api ( PSubtype )
+import HSQF.Common (punsafeCoerce)
+import HSQF.Definition (Term, type (:==>))
 
 step ::
   (Term c s (xs :==> b) -> Term c s (ys :==> b'))
