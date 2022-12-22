@@ -25,6 +25,10 @@ module HSQF.Language.Common
     (#==),
     (#>),
     (#<),
+    -- * Newtype
+    PNewtype,
+    pfromNewtype,
+    pnewtype,
 
     -- * Simple built-in datatypes
     PVoid,
@@ -74,6 +78,14 @@ import SQF
   )
 import SQF qualified (compile)
 import Unsafe.Coerce (unsafeCoerce)
+
+newtype PNewtype a s = MkPNewtype (Term 'Expr s a)
+
+pfromNewtype :: Term c s (PNewtype a) -> Term c s a
+pfromNewtype = punsafeCoerce
+
+pnewtype :: Term c s a -> Term c s (PNewtype a)
+pnewtype = punsafeCoerce
 
 (##) :: Term 'Expr s0 (a :--> b) -> Term 'Expr s a -> Term c s b
 f ## x = MkTerm $ \lvl ->

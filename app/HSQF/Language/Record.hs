@@ -92,13 +92,6 @@ class IsPRecord (a :: PType) where
   type RecordOf a :: [RecordField] -- | c -> a 
   toRecord :: Term 'Expr s a -> Term c s (PRecord (RecordOf a)) 
   fromRecord :: Term 'Expr s (PRecord (RecordOf a)) -> Term c s a 
-newtype PNewtype a s = MkPNewtype (Term 'Expr s a)
-
-pfromNewtype :: Term c s (PNewtype a) -> Term c s a
-pfromNewtype = punsafeCoerce
-pnewtype :: Term c s a -> Term c s (PNewtype a)
-pnewtype = punsafeCoerce
-
 
 instance IsPRecord (PRecord xs) where
   type RecordOf (PRecord xs) = xs
