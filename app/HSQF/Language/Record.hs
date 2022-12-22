@@ -69,25 +69,6 @@ pconsRecord a = record . (plabelTerm a #:) . unRecord
 pemptyRecord :: Term c s (PRecord '[])
 pemptyRecord = record pnil
 
-type LAMBSState :: [RecordField]
-type LAMBSState =
-   '[ "dangerLevel" ':= PInteger
-    , "autoAdjustment" ':= PBool
-    , "targets" ':= PList PUnit 
-    ]
-
-type PLAMBSState :: PType
-newtype PLAMBSState s = MkPLambsState
-  (Term 'Expr s (PRecord LAMBSState))
-  deriving IsPRecord via PNewtype (PRecord LAMBSState)
-
-state :: forall c s. Term c s PLAMBSState
-state = fromRecord $
-  pconsRecord (pconstant @Integer 55)
-  . pconsRecord (pcon PTrue)
-  . pconsRecord (pempty @PUnit)
-  $ pemptyRecord
-
 class IsPRecord (a :: PType) where
   type RecordOf a :: [RecordField] -- | c -> a 
   toRecord :: Term 'Expr s a -> Term c s (PRecord (RecordOf a)) 
@@ -163,20 +144,5 @@ type family IndexOf label xs n = n' where
   IndexOf label (LabeledTerm label a : xs) n = n
   IndexOf label (LabeledTerm _ _ : xs) n = IndexOf label xs (n + 1)
   IndexOf _ _ _ = TypeError ('Text "There is no such label")
-
-type RecExample = '["someField" ':= PInteger, "someOtherField" ':= PBool]
-
-q :: Term 'Expr s (PRecord '["someField" ':= PInteger, "someOtherField" ':= PBool])
-  -> Term 'Expr s PInteger
-q rc = get @"someField" rc -- getRecordField @"suck" rc
-
-type Example = "sdfs" ':= PBool :: RecordField
-
-auto :: Term c s PBool
-auto = foo state -- [55.0, true, []] select 1;
-
-foo :: Term 'Expr s PLAMBSState -> Term c s PBool
-foo x = get @"autoAdjustment" x
-
 
 
