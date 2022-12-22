@@ -8,18 +8,20 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedLabels #-}
 module HSQF.Language.Record
-  ( IsPRecord (fromRecord, toRecord)
-  , 
+  ( PRecord
+  , RecordField (type (:=))
+  , IsPRecord (fromRecord, toRecord)
+  , pconsRecord
+  , pemptyRecord
+  , get
+  , record
+  , unRecord
   ) where
 import HSQF.Prelude
 import GHC.TypeLits (Symbol, Nat, type (+), TypeError, KnownNat, ErrorMessage (Text))
 import HSQF.Language.HList (Nth)
 import qualified HSQF.Language.Monadic as P
 import Data.Kind (Type)
-import HSQF.Api (PUnit)
-import GHC.Records (HasField)
-import GHC.OverloadedLabels (IsLabel (fromLabel))
-import Data.Proxy (Proxy(Proxy))
 
 type RecordField :: Type
 data RecordField = Symbol := PType
@@ -49,7 +51,7 @@ instance PMatch (LabeledTerm label a) where
 
 type PRecord :: [RecordField] -> PType
 newtype PRecord fields s = MkPRecord
-  { runPRecord :: Term 'Expr s (PHList (UnRecordFields fields)) }
+  (Term 'Expr s (PHList (UnRecordFields fields)))
 
 plabelTerm ::
   forall label a c s.
@@ -97,18 +99,6 @@ type GetRecordFieldTypeG label =
 
 get :: forall label. GetRecordFieldTypeG label
 get = getLabeledElem @label . unRecord . toRecord
-
-type GetRecordFieldType label =
-  forall fields a s c xs n.
-  ( n ~ IndexOf label xs 0
-  , KnownNat n
-  , UnRecordFields fields ~ xs
-  , Nth n xs ~ (LabeledTerm label a)) =>
-  Term 'Expr s (PRecord fields) ->
-  Term c s a
-
-field :: forall label. GetRecordFieldType label
-field = getLabeledElem @label . unRecord
 
 {- * Coercion between PHList and PRecord
  those are represintationally the same, so we just `punsafeCoerce`
