@@ -94,7 +94,7 @@ class PMatch (a :: PType) where
   type PPattern a :: PType
   match :: Term 'Expr s a -> (PPattern a s -> Term c s b) -> Term c s b
 
-punsafeCoerce :: Term c s a -> Term c' s b
+punsafeCoerce :: forall a b s c c'. Term c s a -> Term c' s b
 punsafeCoerce = unsafeCoerce
 
 pif :: Term 'Expr s PBool -> Term c s a -> Term c s a -> Term c s a
