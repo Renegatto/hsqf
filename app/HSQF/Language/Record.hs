@@ -7,7 +7,10 @@
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedLabels #-}
-module HSQF.Language.Record where
+module HSQF.Language.Record
+  ( IsPRecord (fromRecord, toRecord)
+  , 
+  ) where
 import HSQF.Prelude
 import GHC.TypeLits (Symbol, Nat, type (+), TypeError, KnownNat, ErrorMessage (Text))
 import HSQF.Language.HList (Nth)
@@ -20,10 +23,6 @@ import Data.Proxy (Proxy(Proxy))
 
 type RecordField :: Type
 data RecordField = Symbol := PType
-
--- >>> :k! "asd" := Bool
--- unknown command 'k!'
-type Example = "sdfs" ':= PBool :: RecordField
 
 type RecFields :: [PType] -> [RecordField] 
 type family RecFields fields = r | r -> fields where
@@ -89,12 +88,6 @@ state = fromRecord $
   . pconsRecord (pempty @PUnit)
   $ pemptyRecord
 
-auto :: Term c s PBool
-auto = foo state -- [55.0, true, []] select 1;
-
-foo :: Term 'Expr s PLAMBSState -> Term c s PBool
-foo x = get @"autoAdjustment" x
-
 class IsPRecord (a :: PType) where
   type RecordOf a :: [RecordField] -- | c -> a 
   toRecord :: Term 'Expr s a -> Term c s (PRecord (RecordOf a)) 
@@ -117,32 +110,6 @@ instance IsPRecord (PNewtype (PRecord xs)) where
   toRecord = unExpr . pfromNewtype
   fromRecord = unExpr . pnewtype
 
--- type XS = '[("slava" := PBool),("rossii" := PInteger)]
-
--- foo :: forall c s. Term 'Expr s (PHList XS) -> Term c s PBool 
--- foo xs = getElem @"slava" xs
-
--- instance 
---   ( n ~ IndexOf label xs 0
---   , KnownNat n
---   , Nth n xs ~ (LabeledTerm label a))
---   => IsLabel symbol a where
-type RecExample = '["suck" ':= PInteger, "dick" ':= PBool]
-
-q :: Term 'Expr s (PRecord '["suck" ':= PInteger, "dick" ':= PBool])
-  -> Term 'Expr s PInteger
-q rc = get @"suck" rc -- getRecordField @"suck" rc
-
--- instance IsLabel field (Proxy field,GetRecordField field) where
---   fromLabel = (Proxy @field, MkGetRecordField $ getRecordField @field)
-
--- field :: forall field. (Proxy field, GetRecordField field) -> GetRecordFieldType field
--- field (Proxy, f) = unGetRecordField f
-
--- newtype GetRecordField field = MkGetRecordField
---   { unGetRecordField :: GetRecordFieldType field
---   }
-
 type GetRecordFieldTypeG label =
   forall fields a s c xs n r.
   ( n ~ IndexOf label xs 0
@@ -156,7 +123,6 @@ type GetRecordFieldTypeG label =
 
 get :: forall label. GetRecordFieldTypeG label
 get = getLabeledElem @label . unRecord . toRecord
-
 
 type GetRecordFieldType label =
   forall fields a s c xs n.
@@ -199,17 +165,25 @@ getLabeledElem xs = P.do
   MkLabeledTerm t <- match $ sel @n xs
   unExpr t
 
--- type family IsJust (a :: Maybe k) where
---   IsJust ('Just _) = 'True
---   IsJust 'Nothing = 'False
-
 type IndexOf :: Symbol -> [a] -> Nat -> Nat
 type family IndexOf label xs n = n' where
   IndexOf label (LabeledTerm label a : xs) n = n
   IndexOf label (LabeledTerm _ _ : xs) n = IndexOf label xs (n + 1)
   IndexOf _ _ _ = TypeError ('Text "There is no such label")
 
+type RecExample = '["someField" ':= PInteger, "someOtherField" ':= PBool]
 
+q :: Term 'Expr s (PRecord '["someField" ':= PInteger, "someOtherField" ':= PBool])
+  -> Term 'Expr s PInteger
+q rc = get @"someField" rc -- getRecordField @"suck" rc
+
+type Example = "sdfs" ':= PBool :: RecordField
+
+auto :: Term c s PBool
+auto = foo state -- [55.0, true, []] select 1;
+
+foo :: Term 'Expr s PLAMBSState -> Term c s PBool
+foo x = get @"autoAdjustment" x
 
 
 
