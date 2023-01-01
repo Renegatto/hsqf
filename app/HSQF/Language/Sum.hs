@@ -21,20 +21,6 @@ import qualified GHC.Generics as GHC
 
 newtype DerivePSumViaData (pa :: PType) (s :: S) = MkDeriveViaData (pa s)
 
-gpcon :: forall (pa :: PType) (pas :: [PType]) (as :: [Type]) s c.
-  ( Generic (pa s)
-  , '[as] ~ Code (pa s)
-  , AllZip (IsTerm s) as pas
-  ) => DerivePSumViaData pa s -> Term c s (DerivePSumViaData pa)
-gpcon (MkDeriveViaData x) = undefined
-  where
-    _ = transTerms @s @as @pas
-
-    _ = case from x of
-          SOP (S cases) -> error "Impossible"
-          SOP (Z record) -> case record of
-            (I (_ :: Term 'Expr s _) :* rest) -> undefined
-            Nil -> undefined
 undefined' :: forall a. a
 undefined' = undefined
 
@@ -53,17 +39,17 @@ case1 = TheOnlyOne (pconstant @Integer 200)
 case2 :: ExampleSumType s
 case2 = SecondOne (pconstant "Some string")
 
-compiledCase1 = gpcon' (MkDeriveViaData case1)
-compiledCase2 = gpcon' (MkDeriveViaData case2)
+compiledCase1 = gpcon (MkDeriveViaData case1)
+compiledCase2 = gpcon (MkDeriveViaData case2)
 -- >>> (compile compiledCase1, compile compiledCase2)
 -- ("[0.0,200.0];","[1.0,\"Some string\"];")
 
-gpcon' :: forall (pa :: PType) (pass :: [PType]) (ass :: [[Type]]) s c.
+gpcon :: forall (pa :: PType) (pass :: [PType]) (ass :: [[Type]]) s c.
   ( Generic (pa s)
   , ass ~ Code (pa s)
   , AllZip (IsSingletonProduct s) ass pass
   ) => DerivePSumViaData pa s -> Term c s (DerivePSumViaData pa)
-gpcon' (MkDeriveViaData x) = unwrap @ass @pass (from x) 0
+gpcon (MkDeriveViaData x) = unwrap @ass @pass (from x) 0
   where
     unwrap :: forall (xss :: [[Type]]) (pxs :: [PType]).
       AllZip (IsSingletonProduct s) xss pxs =>
