@@ -46,9 +46,8 @@ gpcon' (MkDeriveViaData x) = undefined
   where
     _ = case from x of
           SOP (S cases) -> error "Impossible"
-          SOP (Z record) -> case record of
+          SOP (Z Nil) -> undefined'
             --(I (_ :: Term 'Expr s _) :* rest) -> undefined
-            Nil -> undefined
 
 class (a ~ Term 'Expr s pa) => IsTerm s a pa
 
