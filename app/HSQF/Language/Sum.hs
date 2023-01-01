@@ -34,6 +34,8 @@ gpcon (MkDeriveViaData x) = undefined
           SOP (Z record) -> case record of
             (I (_ :: Term 'Expr s _) :* rest) -> undefined
             Nil -> undefined
+undefined' :: forall a. a
+undefined' = undefined
 
 gpcon' :: forall (pa :: PType) (pass :: [[PType]]) (ass :: [[Type]]) s c.
   ( Generic (pa s)
@@ -45,7 +47,7 @@ gpcon' (MkDeriveViaData x) = undefined
     _ = case from x of
           SOP (S cases) -> error "Impossible"
           SOP (Z record) -> case record of
-            (I (_ :: Term 'Expr s _) :* rest) -> undefined
+            --(I (_ :: Term 'Expr s _) :* rest) -> undefined
             Nil -> undefined
 
 class (a ~ Term 'Expr s pa) => IsTerm s a pa
