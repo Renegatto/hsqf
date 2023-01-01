@@ -52,7 +52,7 @@ gpcon' (MkDeriveViaData x) = undefined'
     unwrap (SOP y) (conId :: Int) = case y of
       (Z (I caseTerm :* Nil)) -> MkTerm $ \lvl -> 
         let compiled = runTerm caseTerm lvl
-            compiledConId = NumLit $ fromInt conId
+            compiledConId = NumLit $ fromIntegral conId
         in ListLit [compiledConId, compiled]
       (S (cases :: NS (NP I) xss')) ->
         unwrap @xss' @(Tail pxs) (SOP cases) (succ conId)
