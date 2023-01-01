@@ -10,25 +10,8 @@ module HSQF.Language.Definition
   )
 where
 
-import Data.Data (Proxy (Proxy))
 import Data.Kind (Type)
-import Data.List (intercalate)
-import GHC.TypeLits (natVal, type (-))
-import GHC.TypeNats (KnownNat)
-import SQF
-  ( SQF
-      ( BinaryOperator,
-        Call,
-        GlobalVar,
-        If,
-        ListLit,
-        NumLit,
-        StringLit,
-        UnaryOperator
-      ),
-  )
-import SQF qualified
-import Unsafe.Coerce (unsafeCoerce)
+import SQF (SQF)
 
 data S
 
