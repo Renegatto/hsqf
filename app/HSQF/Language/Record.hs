@@ -22,7 +22,6 @@ import GHC.TypeLits (Symbol, Nat, type (+), TypeError, KnownNat, ErrorMessage (T
 import HSQF.Language.HList (Nth)
 import qualified HSQF.Language.Monadic as P
 import Data.Kind (Type)
-
 type RecordField :: Type
 data RecordField = Symbol := PType
 
@@ -134,5 +133,3 @@ type family IndexOf label xs n = n' where
   IndexOf label (LabeledTerm label a : xs) n = n
   IndexOf label (LabeledTerm _ _ : xs) n = IndexOf label xs (n + 1)
   IndexOf _ _ _ = TypeError ('Text "There is no such label")
-
-
