@@ -42,11 +42,11 @@ gpcon' :: forall (pa :: PType) (pass :: [[PType]]) (ass :: [[Type]]) s c.
   ) => DerivePSumViaData pa s -> Term c s (DerivePSumViaData pa)
 gpcon' (MkDeriveViaData x) = undefined
   where
-    -- _ = case from x of
-    --       SOP (S cases) -> error "Impossible"
-    --       SOP (Z record) -> case record of
-    --         (I (_ :: Term 'Expr s _) :* rest) -> undefined
-    --         Nil -> undefined
+    _ = case from x of
+          SOP (S cases) -> error "Impossible"
+          SOP (Z record) -> case record of
+            (I (_ :: Term 'Expr s _) :* rest) -> undefined
+            Nil -> undefined
 
 class (a ~ Term 'Expr s pa) => IsTerm s a pa
 
