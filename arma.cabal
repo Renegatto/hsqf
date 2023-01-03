@@ -60,6 +60,7 @@ executable arma
     other-modules:
        Examples
        HSQF.Api
+       HSQF.Language.Record
        HSQF.Prelude
        HSQF.Language.HList
        HSQF.Language.Definition

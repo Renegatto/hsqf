@@ -7,6 +7,7 @@
 
 module HSQF.Language.HList
   ( PHList,
+    type Nth,
     getFst,
     getSnd,
     pconcat,
