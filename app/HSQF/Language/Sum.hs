@@ -178,39 +178,18 @@ matchExample =
 -- >>> compile $ matchExample
 -- "private _var0 = ([1.0,\"Foo\"] select 0.0); if (((_var0 >= 1.0) && (_var0 >= 1.0))) then{ ([112.0] + ([([1.0,\"Foo\"] select 1.0)] + [])) }else{ if (((_var0 >= 0.0) && (_var0 >= 0.0))) then{ ([(111.0 + ([1.0,\"Foo\"] select 1.0))] + ([\"Nope\"] + [])) }else{ (throw \"No such case Id found\") }; };;"
 
-data Roll (s :: S)
-  = Zapechenniye (Term 'Expr s (PHList '[ PString, PInteger ]))
-  | NePoliny (Term 'Expr s (PHList '[ PInteger ]))
-  | Samodelki (Term 'Expr s (PHList '[ PString ]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic, PCon', PMatch')
 
-philadelfia :: Roll s
-philadelfia =
-  Samodelki (pconstant "Philadelfia" #: pnil)
-
-zapecheniy :: Roll s
-zapecheniy =
-  Zapechenniye (pconstant "Polyarniy" #: 270 #: pnil)
-
-rollWeight :: Term 'Expr s Roll -> Term 'Stat s PInteger
-rollWeight roll = pmatch roll $ \case
-  Zapechenniye info -> sel @1 info
-  NePoliny info -> sel @0 info
-  Samodelki _ -> pconstant @Integer 200
-
-q = compile $ rollWeight $ pcon' zapecheniy
 {-
 
 >>> q
-"private _var0 = ([0.0,([\"Polyarniy\"] + ([270.0] + []))] select 0.0); if (((_var0 >= 2.0) && (_var0 <= 2.0))) then{ 200.0 }else{ if (((_var0 >= 1.0) && (_var0 <= 1.0))) then{ (([0.0,([\"Polyarniy\"] + ([270.0] + []))] select 1.0) select 0.0) }else{ if (((_var0 >= 0.0) && (_var0 <= 0.0))) then{ (([0.0,([\"Polyarniy\"] + ([270.0] + []))] select 1.0) select 1.0) }else{ (throw \"No such case Id found\") }; }; };;"
+"private _var0 = ([0,([\"Polyarniy\"] + ([270] + []))] select 0); private _var1 = ([0,([\"Polyarniy\"] + ([270] + []))] select 1); switch (_var0) { case 0 : {  (_var1 select 1); } ; case 1 : {  (_var1 select 0); } ; case 2 : {  200; } ; default: {  (throw \"No such case Id found\"); } ; };"
 
 
 
 >>> compile $ pcon' philadelfia
-"[2.0,([\"Philadelfia\"] + [])];"
+"[2,([\"Philadelfia\"] + [])];"
 
 >>> compile $ pcon' zapecheniy
-"[0.0,([\"Polyarniy\"] + ([270.0] + []))];"
+"[0,([\"Polyarniy\"] + ([270] + []))];"
 
 -}
