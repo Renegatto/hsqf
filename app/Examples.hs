@@ -10,6 +10,7 @@ module Examples
     infAmmoForEveryUnitOf,
     compiledInfAmmo,
     compiledRollWeight,
+    philadelfia,
   )
 where
 
@@ -31,14 +32,12 @@ import qualified GHC.Generics as GHC
 import Generics.SOP (Generic)
 import HSQF.Language.Sum (PCon' (pcon'), PMatch' (pmatch))
 
-
-
 type LAMBSState :: [RecordField]
 type LAMBSState =
-   '[ "dangerLevel" ':= PInteger
-    , "autoAdjustment" ':= PBool
-    , "targets" ':= PList PUnit 
-    ]
+  '[ "dangerLevel" ':= PInteger,
+     "autoAdjustment" ':= PBool,
+     "targets" ':= PList PUnit
+   ]
 
 type PLAMBSState :: PType
 newtype PLAMBSState s = MkPLambsState
@@ -167,19 +166,18 @@ data Roll (s :: S)
 philadelfia :: Roll s
 philadelfia =
   HandMade
-  . pconsRecord (pconstant "Philadelfia")
-  $ pemptyRecord
+    . pconsRecord (pconstant "Philadelfia")
+    $ pemptyRecord
 
 polar :: Roll s
 polar =
   Baked
-  . pconsRecord (pconstant "Polar")
-  . pconsRecord 270
-  $ pemptyRecord
+    . pconsRecord (pconstant "Polar")
+    . pconsRecord 270
+    $ pemptyRecord
 
 rollWeight :: Term 'Expr s Roll -> Term 'Stat s PInteger
 rollWeight roll = pmatch roll $ \case
   Baked info -> get @"weightOfSingle" info
   NonBaked info -> get @"weight" info
   HandMade _ -> pconstant @Integer 200
-
