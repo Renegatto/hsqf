@@ -7,6 +7,7 @@
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module HSQF.Language.Record
   ( PRecord
   , RecordField (type (:=))
@@ -22,6 +23,9 @@ import GHC.TypeLits (Symbol, Nat, type (+), TypeError, KnownNat, ErrorMessage (T
 import HSQF.Language.HList (Nth)
 import qualified HSQF.Language.Monadic as P
 import Data.Kind (Type)
+import qualified GHC.Generics as GHC
+import Generics.SOP (Generic)
+
 type RecordField :: Type
 data RecordField = Symbol := PType
 
@@ -51,6 +55,8 @@ instance PMatch (LabeledTerm label a) where
 type PRecord :: [RecordField] -> PType
 newtype PRecord fields s = MkPRecord
   (Term 'Expr s (PHList (UnRecordFields fields)))
+  deriving stock GHC.Generic
+  deriving anyclass Generic
 
 plabelTerm ::
   forall label a c s.
