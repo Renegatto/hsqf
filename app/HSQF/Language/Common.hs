@@ -189,7 +189,7 @@ instance POrd (a :: PType) where
   (#>=) = declareOperator ">="
 
   (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-  (#<=) = declareOperator ">="
+  (#<=) = declareOperator "<="
 
 instance Num (Term 'Expr s PInteger) where
   (+) :: Term 'Expr s PInteger -> Term 'Expr s PInteger -> Term 'Expr s PInteger
