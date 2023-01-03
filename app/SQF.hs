@@ -20,7 +20,7 @@ data SQF
   | BindLocally String SQF
   | Bind String SQF
   | If SQF SQF SQF
-  | Switch SQF [(SQF {- case pattern -}, SQF {- case body -})] (Maybe SQF) {- default -}
+  | Switch SQF [(SQF {- case pattern -}, SQF {- case body -})] (Maybe SQF {- default -})
   deriving stock (Show)
 
 nl :: Char
@@ -96,13 +96,12 @@ compileWithLessParens self lvl = \case
   GlobalVar varid -> varid
   Procedure statements -> compileBlock self (succ lvl) statements
   Switch on cases defaultCase ->
-    let compileCase (pattern,caseBody) =
+    let compileCase (pattern, caseBody) =
           ["case", self lvl pattern, ":", self lvl caseBody, ";"]
         compileDefault caseBody =
           unwords ["default:", self lvl caseBody, ";"]
-    in unwords $
-      [ "switch", parens $ self lvl on, "{"]
-      ++ (cases >>= compileCase)
-      ++ maybeToList (compileDefault <$> defaultCase)
-      ++ ["}"]
-      
+     in unwords $
+          ["switch", parens $ self lvl on, "{"]
+            ++ (cases >>= compileCase)
+            ++ maybeToList (compileDefault <$> defaultCase)
+            ++ ["}"]
