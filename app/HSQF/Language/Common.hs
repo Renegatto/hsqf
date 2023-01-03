@@ -170,26 +170,27 @@ instance PConstant String where
 pnot :: Term 'Expr s PBool -> Term c s PBool
 pnot = declareUnary "not"
 
-(#==) :: POrd a => Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-a #== b = (a #>= b) #&& (a #<= b)
-
-(#>) :: POrd a => Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-a #> b = (a #>= b) #&& pnot (a #== b)
-
-(#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-(#<) = (pnot .) . (#>)
-
-class POrd (a :: PType) where
-  {-# MINIMAL (#>=), (#<=) #-}
+class PEq (a :: PType) where
+  (#==) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+class PEq a => POrd (a :: PType) where
+  {-# MINIMAL (#>) #-}
+  (#>) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  a #< b = pnot $ (a #== b) #|| (a #> b)
   (#>=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  a #>= b = (a #== b) #|| (a #> b)
   (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  a #<= b = (a #== b) #|| (a #< b)
+
+instance PEq (a :: PType) where 
+  a #== b = (a #>= b) #&& (a #<= b)
 
 instance POrd (a :: PType) where
-  (#>=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-  (#>=) = declareOperator ">="
+  (#>) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#>) = declareOperator ">"
 
-  (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-  (#<=) = declareOperator "<="
+  (#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#<) = declareOperator "<"
 
 instance Num (Term 'Expr s PInteger) where
   (+) :: Term 'Expr s PInteger -> Term 'Expr s PInteger -> Term 'Expr s PInteger
