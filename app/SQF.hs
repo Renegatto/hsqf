@@ -99,7 +99,7 @@ compileWithLessParens self lvl = \case
     let compileCase (pattern, caseBody) =
           ["case", self lvl pattern, ":", self lvl caseBody, ";"]
         compileDefault caseBody =
-          unwords ["default:", self lvl caseBody, ";"]
+          unwords ["default", self lvl caseBody, ";"]
      in unwords $
           ["switch", parens $ self lvl on, "{"]
             ++ (cases >>= compileCase)
