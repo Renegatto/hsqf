@@ -25,15 +25,16 @@ import Generics.SOP.NP (trans_NP)
 import Generics.SOP.Constraint (Tail)
 import HSQF.Language.Definition (Term(runTerm, MkTerm))
 import SQF (SQF(ListLit, IntLit))
-import qualified GHC.Generics as GHC
 import qualified HSQF.Language.Monadic as P
 import HSQF.Language.Procedure (pswitch, plazy)
 
+-- | Need due GHC bug
 undefined' :: forall a. a
 undefined' = undefined
 
+-- | Need due GHC bug
 fromInt :: Int -> Integer
-fromInt = fromIntegral -- need due GHC bug
+fromInt = fromIntegral
 
 class PMatch' (pa :: PType) where
   pmatch :: Term 'Expr s pa -> (pa s -> Term c s b) -> Term 'Stat s b
@@ -129,67 +130,3 @@ transTerms =
   trans_NP
     (Proxy :: Proxy (IsTerm s))
     (\(I x) -> x)
-
-data ExampleSumType (s :: S)
-  = TheOnlyOne (Term 'Expr s PInteger)
-  | SecondOne (Term 'Expr s PString)
-  deriving stock GHC.Generic
-  deriving anyclass Generic
-
-deriving anyclass instance (PCon' ExampleSumType)
-
-case1 :: ExampleSumType s
-case1 = TheOnlyOne (pconstant @Integer 200)
-
-case2 :: ExampleSumType s
-case2 = SecondOne (pconstant "Some string")
-
-compiledCase1 = pcon' case1
-compiledCase2 = pcon' case2
-
--- >>> (compile compiledCase1, compile compiledCase2)
--- ("[0.0,200.0];","[1.0,\"Some string\"];")
-
-data Exmpl = A | B Int | C Float
-  deriving stock (GHC.Generic, Show)
-  deriving anyclass Generic
-
-kkkk :: (Exmpl, Exmpl, Exmpl)
-kkkk = 
-  let a = to $ (SOP (Z Nil) :: SOP I '[ '[], '[Int],'[Float]])
-      b = to $ SOP (S (Z (I 23 :* Nil)))
-      injects = injections @(Code Exmpl) @(NP I)
-      K j = case injects of
-        Fn _ :* Fn case2 :* _ -> case2 (I 5 :* Nil)
-  in (a,b, to $ SOP j) 
-
--- >>> kkkk
--- (A,B 23,B 5)
-
-matchExample :: Term 'Stat s (PHList '[PInteger, PString])
-matchExample = 
-  gpmatch
-    (gpcon $ SecondOne $ pconstant "Foo")
-    (\case
-      TheOnlyOne n -> (111 + n #: pconstant "Nope" #: pnil)
-      SecondOne s -> (112 #: s #: pnil)
-    ) 
-
--- >>> compile $ matchExample
--- "private _var0 = ([1.0,\"Foo\"] select 0.0); if (((_var0 >= 1.0) && (_var0 >= 1.0))) then{ ([112.0] + ([([1.0,\"Foo\"] select 1.0)] + [])) }else{ if (((_var0 >= 0.0) && (_var0 >= 0.0))) then{ ([(111.0 + ([1.0,\"Foo\"] select 1.0))] + ([\"Nope\"] + [])) }else{ (throw \"No such case Id found\") }; };;"
-
-
-{-
-
->>> q
-"private _var0 = ([0,([\"Polyarniy\"] + ([270] + []))] select 0); private _var1 = ([0,([\"Polyarniy\"] + ([270] + []))] select 1); switch (_var0) { case 0 : {  (_var1 select 1); } ; case 1 : {  (_var1 select 0); } ; case 2 : {  200; } ; default: {  (throw \"No such case Id found\"); } ; };"
-
-
-
->>> compile $ pcon' philadelfia
-"[2,([\"Philadelfia\"] + [])];"
-
->>> compile $ pcon' zapecheniy
-"[0,([\"Polyarniy\"] + ([270] + []))];"
-
--}
