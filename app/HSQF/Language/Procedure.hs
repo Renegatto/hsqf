@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module HSQF.Language.Procedure where
+module HSQF.Language.Procedure (pswitch, pprocedure, plazy) where
 
 import Data.Kind (Constraint)
 import HSQF.Language.Common
@@ -18,6 +18,7 @@ import HSQF.Language.Common
     type (:==>),
     var,
     term,
+    PEq,
   )
 import HSQF.Language.Definition (Term (MkTerm, runTerm))
 import SQF
@@ -25,9 +26,11 @@ import SQF
       ( ListLit,
         Procedure,
         StringLit,
-        UnaryOperator
+        UnaryOperator,
+        Switch
       ),
   )
+import Control.Arrow (Arrow((***)))
 
 pprocedure ::
   forall (ret :: PType) (c :: Scope) (c' :: Scope) (args :: [PType]) (s :: S).
@@ -35,6 +38,21 @@ pprocedure ::
   Next args ret c s ->
   Term c' s (args :==> ret)
 pprocedure f = MkTerm $ \lvl -> nextArg @args @ret @c @s lvl [] f
+
+plazy :: Term c s a -> Term c s ('[] :==> a)
+plazy x = MkTerm $ \lvl -> Procedure [runTerm x lvl]
+
+pswitch :: forall a b c s.
+  PEq a =>
+  Term 'Expr s a ->
+  [(Term 'Expr s a, Term c s ('[] :==> b))] ->
+  (Maybe (Term c s ('[] :==> b))) ->
+  Term c s b
+pswitch on cases whenNothingMatched = MkTerm $ \lvl ->
+  Switch
+    (runTerm on lvl)
+    ((flip runTerm lvl *** flip runTerm lvl) <$> cases)
+    (flip runTerm lvl <$> whenNothingMatched) 
 
 type MatchArgs :: [PType] -> PType -> Scope -> S -> Constraint
 class MatchArgs xs b c s where
