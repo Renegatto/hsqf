@@ -183,7 +183,7 @@ class PEq a => POrd (a :: PType) where
   a #<= b = (a #== b) #|| (a #< b)
 
 instance PEq (a :: PType) where 
-  a #== b = (a #>= b) #&& (a #<= b)
+  (#==) = declareOperator "=="
 
 instance POrd (a :: PType) where
   (#>) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
