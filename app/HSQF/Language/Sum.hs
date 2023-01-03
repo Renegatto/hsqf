@@ -57,6 +57,51 @@ gpcon x =
       (S (cases :: NS (NP I) xss')) ->
         unwrap @xss' @(Tail pxs) (SOP cases) (succ conId)
 
+gpmatch ::
+  forall (pa :: PType) (pb :: PType) (pas :: [PType]) s c ass.
+  ( Generic (pa s)
+  , ass ~ Code (pa s)
+  , AllZip (IsSingletonProduct s) ass pas
+  ) =>
+  Term 'Expr s pa ->
+  (pa s -> Term c s pb) -> Term 'Stat s pb
+gpmatch toMatch f = body
+  where
+    branch :: --forall a.
+      Term 'Expr s PInteger ->
+      --Term 'Expr s a ->
+      [Term c s pb] ->
+      Term c s pb
+    branch conId =
+      foldl (\acc (caseId, caseExpr) -> pif (conId #== caseId) caseExpr acc)
+        (ptraceError $ pconstant "No such case Id found")
+      . zip [ pconstant n | n <- [0..] ]
+
+    toMatch' :: Term 'Expr s (PHList '[PInteger, a])
+    toMatch' = punsafeCoerce toMatch
+    conPayload :: forall x. Term 'Expr s x
+    conPayload = sel @1 toMatch'  
+
+    hsCases = makeCases @ass @pas injections
+
+    makeCases :: forall (ass' :: [[Type]]) (pas' :: [PType]).
+      AllZip (IsSingletonProduct s) ass' pas' =>
+      NP (Injection (NP I) ass) ass' -> [pa s]
+    makeCases Nil = []
+    makeCases (Fn con :* (rest :: NP (Injection (NP I) ass) ass'')) = 
+      let arg :: pa s
+          arg = to $ SOP $ unK $ con (I conPayload :* Nil)
+          next :: [pa s]
+          next = makeCases @ass'' @(Tail pas') rest
+      in arg : next
+
+    body = P.do
+      conId <- plet $ sel @0 toMatch' 
+      --conPayload <- plet $ sel @1 toMatch'    
+      let cases :: [Term c s pb]
+          cases = f <$> hsCases
+      branch conId {-conPayload-} cases
+
 class (a ~ Term 'Expr s pa) => IsTerm s a pa
 class (xs ~ '[Term 'Expr s pa]) => IsSingletonProduct s xs pa
 instance (xs ~ '[Term 'Expr s pa]) => IsSingletonProduct s xs pa
