@@ -11,7 +11,12 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE QualifiedDo #-}
-module HSQF.Language.Sum () where
+{-# LANGUAGE ParallelListComp #-}
+module HSQF.Language.Sum
+  ( PCon' (pcon'),
+    PMatch' (pmatch),
+  )
+where
 
 import Generics.SOP
 import HSQF.Prelude
@@ -22,6 +27,7 @@ import HSQF.Language.Definition (Term(runTerm, MkTerm))
 import SQF (SQF(ListLit, IntLit))
 import qualified GHC.Generics as GHC
 import qualified HSQF.Language.Monadic as P
+import HSQF.Language.Procedure (pswitch, plazy)
 
 undefined' :: forall a. a
 undefined' = undefined
@@ -81,40 +87,34 @@ gpmatch ::
   (pa s -> Term c s pb) -> Term 'Stat s pb
 gpmatch toMatch f = body
   where
-    branch :: --forall a.
-      Term 'Expr s PInteger ->
-      --Term 'Expr s a ->
-      [Term c s pb] ->
-      Term c s pb
-    branch conId =
-      foldl (\acc (caseId, caseExpr) -> pif (conId #== caseId) caseExpr acc)
-        (ptraceError $ pconstant "No such case Id found")
-      . zip [ pconstant n | n <- [0..] ]
-
-    toMatch' :: Term 'Expr s (PHList '[PInteger, a])
-    toMatch' = punsafeCoerce toMatch
-    conPayload :: forall x. Term 'Expr s x
-    conPayload = sel @1 toMatch'  
-
-    hsCases = makeCases @ass @pas injections
-
-    makeCases :: forall (ass' :: [[Type]]) (pas' :: [PType]).
-      AllZip (IsSingletonProduct s) ass' pas' =>
-      NP (Injection (NP I) ass) ass' -> [pa s]
-    makeCases Nil = []
-    makeCases (Fn con :* (rest :: NP (Injection (NP I) ass) ass'')) = 
-      let arg :: pa s
-          arg = to $ SOP $ unK $ con (I conPayload :* Nil)
-          next :: [pa s]
-          next = makeCases @ass'' @(Tail pas') rest
-      in arg : next
-
     body = P.do
-      conId <- plet $ sel @0 toMatch' 
-      --conPayload <- plet $ sel @1 toMatch'    
-      let cases :: [Term c s pb]
-          cases = f <$> hsCases
-      branch conId {-conPayload-} cases
+      toMatchRef <- plet toMatch
+      let toMatch' :: forall a. Term 'Expr s (PHList '[PInteger, a])
+          toMatch' = punsafeCoerce toMatchRef 
+      conPayload <- plet $ sel @1 toMatch'
+      let conId = sel @0 toMatch'
+        
+          conPayload' :: forall x. Term 'Expr s x
+          conPayload' = punsafeCoerce conPayload
+
+          makeCases :: forall (ass' :: [[Type]]) (pas' :: [PType]).
+            AllZip (IsSingletonProduct s) ass' pas' =>
+            NP (Injection (NP I) ass) ass' -> [pa s]
+          makeCases Nil = []
+          makeCases (Fn con :* (rest :: NP (Injection (NP I) ass) ass'')) = 
+            let arg :: pa s
+                arg = to $ SOP $ unK $ con (I conPayload' :* Nil)
+                next :: [pa s]
+                next = makeCases @ass'' @(Tail pas') rest
+            in arg : next
+
+          cases :: [Term c s pb]
+          cases = f <$> makeCases @ass @pas injections 
+      
+      pswitch
+        conId
+        [ (pconstant n, plazy c) | c <- cases | n <- [0..]]
+        (Just $ plazy $ ptraceError $ pconstant "No such case Id found")
 
 class (a ~ Term 'Expr s pa) => IsTerm s a pa
 class (xs ~ '[Term 'Expr s pa]) => IsSingletonProduct s xs pa
