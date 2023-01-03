@@ -146,6 +146,71 @@ case2 = SecondOne (pconstant "Some string")
 
 compiledCase1 = pcon' case1
 compiledCase2 = pcon' case2
+
 -- >>> (compile compiledCase1, compile compiledCase2)
 -- ("[0.0,200.0];","[1.0,\"Some string\"];")
 
+data Exmpl = A | B Int | C Float
+  deriving stock (GHC.Generic, Show)
+  deriving anyclass Generic
+
+kkkk :: (Exmpl, Exmpl, Exmpl)
+kkkk = 
+  let a = to $ (SOP (Z Nil) :: SOP I '[ '[], '[Int],'[Float]])
+      b = to $ SOP (S (Z (I 23 :* Nil)))
+      injects = injections @(Code Exmpl) @(NP I)
+      K j = case injects of
+        Fn _ :* Fn case2 :* _ -> case2 (I 5 :* Nil)
+  in (a,b, to $ SOP j) 
+
+-- >>> kkkk
+-- (A,B 23,B 5)
+
+matchExample :: Term 'Stat s (PHList '[PInteger, PString])
+matchExample = 
+  gpmatch
+    (gpcon $ SecondOne $ pconstant "Foo")
+    (\case
+      TheOnlyOne n -> (111 + n #: pconstant "Nope" #: pnil)
+      SecondOne s -> (112 #: s #: pnil)
+    ) 
+
+-- >>> compile $ matchExample
+-- "private _var0 = ([1.0,\"Foo\"] select 0.0); if (((_var0 >= 1.0) && (_var0 >= 1.0))) then{ ([112.0] + ([([1.0,\"Foo\"] select 1.0)] + [])) }else{ if (((_var0 >= 0.0) && (_var0 >= 0.0))) then{ ([(111.0 + ([1.0,\"Foo\"] select 1.0))] + ([\"Nope\"] + [])) }else{ (throw \"No such case Id found\") }; };;"
+
+data Roll (s :: S)
+  = Zapechenniye (Term 'Expr s (PHList '[ PString, PInteger ]))
+  | NePoliny (Term 'Expr s (PHList '[ PInteger ]))
+  | Samodelki (Term 'Expr s (PHList '[ PString ]))
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic, PCon', PMatch')
+
+philadelfia :: Roll s
+philadelfia =
+  Samodelki (pconstant "Philadelfia" #: pnil)
+
+zapecheniy :: Roll s
+zapecheniy =
+  Zapechenniye (pconstant "Polyarniy" #: 270 #: pnil)
+
+rollWeight :: Term 'Expr s Roll -> Term 'Stat s PInteger
+rollWeight roll = pmatch roll $ \case
+  Zapechenniye info -> sel @1 info
+  NePoliny info -> sel @0 info
+  Samodelki _ -> pconstant @Integer 200
+
+q = compile $ rollWeight $ pcon' zapecheniy
+{-
+
+>>> q
+"private _var0 = ([0.0,([\"Polyarniy\"] + ([270.0] + []))] select 0.0); if (((_var0 >= 2.0) && (_var0 <= 2.0))) then{ 200.0 }else{ if (((_var0 >= 1.0) && (_var0 <= 1.0))) then{ (([0.0,([\"Polyarniy\"] + ([270.0] + []))] select 1.0) select 0.0) }else{ if (((_var0 >= 0.0) && (_var0 <= 0.0))) then{ (([0.0,([\"Polyarniy\"] + ([270.0] + []))] select 1.0) select 1.0) }else{ (throw \"No such case Id found\") }; }; };;"
+
+
+
+>>> compile $ pcon' philadelfia
+"[2.0,([\"Philadelfia\"] + [])];"
+
+>>> compile $ pcon' zapecheniy
+"[0.0,([\"Polyarniy\"] + ([270.0] + []))];"
+
+-}
