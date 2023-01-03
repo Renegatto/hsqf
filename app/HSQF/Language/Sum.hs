@@ -19,14 +19,14 @@ import Data.Kind (Type)
 import Generics.SOP.NP (trans_NP)
 import Generics.SOP.Constraint (Tail)
 import HSQF.Language.Definition (Term(runTerm, MkTerm))
-import SQF (SQF(ListLit, NumLit))
+import SQF (SQF(ListLit, IntLit))
 import qualified GHC.Generics as GHC
 import qualified HSQF.Language.Monadic as P
 
 undefined' :: forall a. a
 undefined' = undefined
 
-fromInt :: Int -> Float
+fromInt :: Int -> Integer
 fromInt = fromIntegral -- need due GHC bug
 
 class PMatch' (pa :: PType) where
@@ -66,7 +66,7 @@ gpcon x =
     unwrap (SOP y) (conId :: Int) = case y of
       (Z (I caseTerm :* Nil)) -> MkTerm $ \lvl -> 
         let compiled = runTerm caseTerm lvl
-            compiledConId = NumLit $ fromInt conId
+            compiledConId = IntLit $ fromInt conId
         in ListLit [compiledConId, compiled]
       (S (cases :: NS (NP I) xss')) ->
         unwrap @xss' @(Tail pxs) (SOP cases) (succ conId)

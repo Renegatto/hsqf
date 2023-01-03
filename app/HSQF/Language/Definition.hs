@@ -22,7 +22,6 @@ import SQF
         GlobalVar,
         If,
         ListLit,
-        NumLit,
         StringLit,
         UnaryOperator
       ),

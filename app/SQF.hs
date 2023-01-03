@@ -2,11 +2,13 @@ module SQF (SQF (..), compile, unNewLine) where
 
 import Data.Function (fix)
 import Data.List (intercalate)
+import Data.Maybe (maybeToList)
 
 -- | Untyped (lmao) SQF language
 data SQF
   = ListLit [SQF]
   | NumLit Float
+  | IntLit Integer
   | StringLit String
   | UnaryOperator String SQF
   | BinaryOperator String SQF SQF
@@ -67,6 +69,7 @@ compileWithLessParens self lvl = \case
   ListLit exprs ->
     "[" <> intercalate "," (self lvl <$> exprs) <> "]"
   NumLit n -> show n
+  IntLit n -> show n
   StringLit str -> ['"'] <> str <> ['"']
   UnaryOperator opVarid arg ->
     parens $

@@ -21,10 +21,8 @@ module HSQF.Language.Common
     PCon (pcon),
     PConstant (PConstanted, pconstant),
     PLift (PLifted),
-    POrd ((#>=), (#<=)),
-    (#==),
-    (#>),
-    (#<),
+    POrd ((#>=), (#<=), (#>), (#<)),
+    PEq ((#==)),
     -- * Newtype
     PNewtype,
     pfromNewtype,
@@ -70,9 +68,9 @@ import SQF
         If,
         ListLit,
         LocalVar,
-        NumLit,
         StringLit,
-        UnaryOperator
+        UnaryOperator,
+        IntLit
       ),
     unNewLine,
   )
@@ -127,7 +125,7 @@ instance PLift PInteger where type PLifted PInteger = Integer
 instance PConstant Integer where
   type PConstanted Integer = PInteger
   pconstant :: Integer -> Term c s (PConstanted Integer)
-  pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
+  pconstant n = MkTerm $ \_ -> IntLit $ fromIntegral n
 
 type PString :: PType
 newtype PString s = MkString {runPString :: Term 'Expr s PString}
