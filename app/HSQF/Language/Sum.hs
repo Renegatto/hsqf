@@ -10,22 +10,36 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE QualifiedDo #-}
 module HSQF.Language.Sum () where
 
 import Generics.SOP
 import HSQF.Prelude
 import Data.Kind (Type)
 import Generics.SOP.NP (trans_NP)
-import Generics.SOP.Constraint (Tail, Head)
+import Generics.SOP.Constraint (Tail)
 import HSQF.Language.Definition (Term(runTerm, MkTerm))
 import SQF (SQF(ListLit, NumLit))
 import qualified GHC.Generics as GHC
+import qualified HSQF.Language.Monadic as P
 
 undefined' :: forall a. a
 undefined' = undefined
 
 fromInt :: Int -> Float
 fromInt = fromIntegral -- need due GHC bug
+
+class PMatch' (pa :: PType) where
+  pmatch :: Term 'Expr s pa -> (pa s -> Term c s b) -> Term 'Stat s b
+  default pmatch :: 
+    forall (pb :: PType) (pas :: [PType]) s c ass.
+    ( Generic (pa s)
+    , ass ~ Code (pa s)
+    , AllZip (IsSingletonProduct s) ass pas
+    ) =>
+    Term 'Expr s pa ->
+    (pa s -> Term c s pb) -> Term 'Stat s pb
+  pmatch = gpmatch @pa @pb @pas
 
 class PCon' (a :: PType) where
   pcon' :: a s -> Term c s a
