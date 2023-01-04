@@ -30,7 +30,7 @@ import HSQF.Prelude
 import HSQF.Language.Record
 import qualified GHC.Generics as GHC
 import Generics.SOP (Generic)
-import HSQF.Language.Sum (PCon' (pcon'), PMatch' (pmatch))
+import HSQF.Language.Sum (GPCon, GPMatch, DeriveGenerically (MkDeriveGenerically))
 
 type LAMBSState :: [RecordField]
 type LAMBSState =
@@ -125,7 +125,7 @@ compiledInfAmmo = compile $ infAmmoForEveryUnitOf thisPlayer
 -- * Rolls
 
 compiledRollWeight :: String
-compiledRollWeight = compile $ rollWeight $ pcon' polar
+compiledRollWeight = compile $ rollWeight $ pcon polar
 
 {-
 >>> compiledRollWeight
@@ -161,7 +161,9 @@ data Roll (s :: S)
           )
       )
   deriving stock (GHC.Generic)
-  deriving anyclass (Generic, PCon', PMatch')
+  deriving anyclass (Generic, GPCon, GPMatch)
+  deriving PMatch via DeriveGenerically Roll
+  deriving PCon via DeriveGenerically Roll
 
 philadelfia :: Roll s
 philadelfia =
@@ -177,7 +179,10 @@ polar =
     $ pemptyRecord
 
 rollWeight :: Term 'Expr s Roll -> Term 'Stat s PInteger
-rollWeight roll = pmatch roll $ \case
+rollWeight roll = match roll $ \case
   Baked info -> get @"weightOfSingle" info
   NonBaked info -> get @"weight" info
   HandMade _ -> pconstant @Integer 200
+
+polarRollWeight :: Term 'Stat s PInteger
+polarRollWeight = rollWeight (pcon polar)
