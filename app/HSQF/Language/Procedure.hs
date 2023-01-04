@@ -3,7 +3,13 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module HSQF.Language.Procedure (pswitch, pprocedure, plazy) where
+module HSQF.Language.Procedure
+  ( pswitch,
+    pprocedure,
+    plazy,
+    pletf,
+  )
+where
 
 import Data.Kind (Constraint)
 import HSQF.Language.Common
@@ -31,6 +37,10 @@ import SQF
       ),
   )
 import Control.Arrow (Arrow((***)))
+import HSQF.Language.HList ((#), (#:), pnil)
+
+pletf :: Term 'Expr s a -> (Term 'Expr s a -> Term c s b) -> Term c s b
+pletf def scope = pprocedure scope # (def #: pnil)
 
 pprocedure ::
   forall (ret :: PType) (c :: Scope) (c' :: Scope) (args :: [PType]) (s :: S).
