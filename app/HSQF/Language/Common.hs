@@ -18,7 +18,7 @@ module HSQF.Language.Common
 
     -- * Typeclasses
     PMatch (PPattern, match),
-    PCon (pcon),
+    PCon (type PConstructed, pcon),
     PConstant (PConstanted, pconstant),
     PLift (PLifted),
     POrd ((#>=), (#<=), (#>), (#<)),
@@ -98,7 +98,8 @@ class (PConstanted (PLifted pa) ~ pa) => PLift (pa :: PType) where
   type PLifted pa :: Type
 
 class PCon (a :: PType) where
-  pcon :: a s -> Term c s a
+  type PConstructed a :: PType
+  pcon :: a s -> Term c s (PConstructed a)
 
 class PMatch (a :: PType) where
   type PPattern a :: PType
@@ -117,6 +118,7 @@ newtype PInteger s = MkInteger {runPInteger :: Term 'Expr s PInteger}
 _ = pconstant 2 :: Term c s PInteger
 
 instance PCon PInteger where
+  type PConstructed PInteger = PInteger
   pcon :: PInteger s -> Term c s PInteger
   pcon n = unExpr $ runPInteger n
 
@@ -136,6 +138,7 @@ type PVoid :: PType
 newtype PVoid s = MkPVoid {runPVoid :: Term 'Expr s PVoid}
 
 instance PCon PVoid where
+  type PConstructed PVoid = PVoid
   pcon :: PVoid s -> Term c s PVoid
   pcon n = unExpr $ runPVoid n
 
@@ -149,6 +152,7 @@ instance PConstant () where
 _ = pconstant () :: Term c s PVoid
 
 instance PCon PString where
+  type PConstructed PString = PString
   pcon :: PString s -> Term c s PString
   pcon n = unExpr $ runPString n
 
@@ -208,6 +212,7 @@ type PBool :: PType
 data PBool s = PTrue | PFalse
 
 instance PCon PBool where
+  type PConstructed PBool = PBool
   pcon :: PBool s -> Term c s PBool
   pcon PTrue = MkTerm $ \_ -> GlobalVar "true"
   pcon PFalse = MkTerm $ \_ -> GlobalVar "false"

@@ -46,6 +46,7 @@ data LabeledTerm label a s = MkLabeledTerm
   { runLabeledTerm :: Term 'Expr s a }
 
 instance PCon (LabeledTerm label a) where
+  type PConstructed (LabeledTerm label a) = (LabeledTerm label a)
   pcon = punsafeCoerce @a @(LabeledTerm label a) . runLabeledTerm 
 instance PMatch (LabeledTerm label a) where
   type PPattern (LabeledTerm label a) = (LabeledTerm label a)
