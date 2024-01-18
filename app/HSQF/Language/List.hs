@@ -33,5 +33,5 @@ pcons ::
   Term c s (PList a)
 pcons = pconcat . psingleton
 
-pempty :: Term c s (PList a)
+pempty :: forall a c s. Term c s (PList a)
 pempty = MkTerm $ \_ -> ListLit []

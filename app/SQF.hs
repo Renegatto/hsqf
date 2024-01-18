@@ -26,6 +26,9 @@ nl = '\n'
 eol :: [Char]
 eol = [';', nl]
 
+statement :: String -> String
+statement = (++ ";")
+
 parens :: String -> String
 parens x = "(" <> x <> ")"
 
@@ -47,7 +50,7 @@ compileBlock compiler lvl statements =
    in "{" <> [nl] <> compiled <> "}"
 
 compile :: Int -> SQF -> String
-compile = fix compileWithLessParens
+compile = (statement .) . fix compileWithLessParens
 
 compileWithLessParens :: (Int -> SQF -> String) -> Int -> SQF -> String
 compileWithLessParens self lvl = \case

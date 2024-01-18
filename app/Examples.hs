@@ -1,4 +1,6 @@
 {-# LANGUAGE QualifiedDo #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Examples
   ( someResult,
     someLambda,
@@ -17,9 +19,46 @@ import HSQF.Api
     punsafeDowncast,
     setvehicleammo,
     units,
+    PUnit
   )
-import qualified HSQF.Language.Monadic as P
+import HSQF.Language.Monadic qualified as P
 import HSQF.Prelude
+import HSQF.Language.Record
+
+
+type LAMBSState :: [RecordField]
+type LAMBSState =
+   '[ "dangerLevel" ':= PInteger
+    , "autoAdjustment" ':= PBool
+    , "targets" ':= PList PUnit 
+    ]
+
+type PLAMBSState :: PType
+newtype PLAMBSState s = MkPLambsState
+  (Term 'Expr s (PRecord LAMBSState))
+  deriving IsPRecord via PNewtype (PRecord LAMBSState)
+
+type RecExample = '["someField" ':= PInteger, "someOtherField" ':= PBool]
+
+q :: Term 'Expr s (PRecord '["someField" ':= PInteger, "someOtherField" ':= PBool])
+  -> Term 'Expr s PInteger
+q rc = get @"someField" rc -- getRecordField @"suck" rc
+
+type Example = "sdfs" ':= PBool :: RecordField
+
+state :: forall c s. Term c s PLAMBSState
+state = fromRecord $
+  pconsRecord (pconstant @Integer 55)
+  . pconsRecord (pcon PTrue)
+  . pconsRecord (pempty @PUnit)
+  $ pemptyRecord
+
+
+auto :: Term c s PBool
+auto = foo state -- [55.0, true, []] select 1;
+
+foo :: Term 'Expr s PLAMBSState -> Term c s PBool
+foo x = get @"autoAdjustment" x
 
 someResult :: Term c s PInteger
 someResult = someLambda # psingleton (pconstant @Integer 1)
@@ -68,7 +107,11 @@ infAmmoForEveryUnitOf player = P.do
       artyAsVehicle `addEventHandler` (event #: reloadAmmo #: pnil)
   giveInfAmmo `forEach` units player
 
+compiled :: String
+compiled = compile $ infAmmoForEveryUnitOf thisPlayer
+
 {-
->>> unNewLine $ compile 0 $ runTerm (reloadAmmoForEveryUnitOf player) 0
-"private _var0 = \"fired\"; private _var1 = {  (params [\"_var2\"]);  private _var3 = {    (params [\"_var4\"]);    (_var4 setvehicleammo 1.0); };   private _var4 = _var2;   (_var4 addEventHandler ([_var0] + ([_var3] + []))); }; (_var1 forEach (units this))"
+>>> compiled
+"private _var0 = \"fired\"; private _var1 = {  (params [\"_var2\"]);  private _var3 = {    (params [\"_var4\"]);    (_var4 setvehicleammo 1.0); };   private _var4 = _var2;   (_var4 addEventHandler ([_var0] + ([_var3] + []))); }; (_var1 forEach (units this));"
+
 -}

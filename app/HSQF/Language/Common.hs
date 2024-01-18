@@ -25,6 +25,10 @@ module HSQF.Language.Common
     (#==),
     (#>),
     (#<),
+    -- * Newtype
+    PNewtype,
+    pfromNewtype,
+    pnewtype,
 
     -- * Simple built-in datatypes
     PVoid,
@@ -45,6 +49,7 @@ module HSQF.Language.Common
     mkVar,
     var,
     term,
+    compile,
   )
 where
 
@@ -64,12 +69,23 @@ import SQF
         GlobalVar,
         If,
         ListLit,
+        LocalVar,
         NumLit,
         StringLit,
-        UnaryOperator, LocalVar
+        UnaryOperator
       ),
+    unNewLine,
   )
+import SQF qualified (compile)
 import Unsafe.Coerce (unsafeCoerce)
+
+newtype PNewtype a s = MkPNewtype (Term 'Expr s a)
+
+pfromNewtype :: Term c s (PNewtype a) -> Term c s a
+pfromNewtype = punsafeCoerce
+
+pnewtype :: Term c s a -> Term c s (PNewtype a)
+pnewtype = punsafeCoerce
 
 (##) :: Term 'Expr s0 (a :--> b) -> Term 'Expr s a -> Term c s b
 f ## x = MkTerm $ \lvl ->
@@ -90,7 +106,7 @@ class PMatch (a :: PType) where
   type PPattern a :: PType
   match :: Term 'Expr s a -> (PPattern a s -> Term c s b) -> Term c s b
 
-punsafeCoerce :: Term c s a -> Term c' s b
+punsafeCoerce :: forall a b s c c'. Term c s a -> Term c' s b
 punsafeCoerce = unsafeCoerce
 
 pif :: Term 'Expr s PBool -> Term c s a -> Term c s a -> Term c s a
@@ -225,3 +241,6 @@ unExpr = punsafeCoerce
 
 expr :: Term 'Expr s a -> Term 'Expr s a
 expr = id
+
+compile :: Term c s a -> String
+compile = unNewLine . SQF.compile 0 . flip runTerm 0
