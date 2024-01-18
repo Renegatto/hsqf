@@ -2,11 +2,13 @@ module SQF (SQF (..), compile, unNewLine) where
 
 import Data.Function (fix)
 import Data.List (intercalate)
+import Data.Maybe (maybeToList)
 
 -- | Untyped (lmao) SQF language
 data SQF
   = ListLit [SQF]
   | NumLit Float
+  | IntLit Integer
   | StringLit String
   | UnaryOperator String SQF
   | BinaryOperator String SQF SQF
@@ -18,6 +20,7 @@ data SQF
   | BindLocally String SQF
   | Bind String SQF
   | If SQF SQF SQF
+  | Switch SQF [(SQF {- case pattern -}, SQF {- case body -})] (Maybe SQF {- default -})
   deriving stock (Show)
 
 nl :: Char
@@ -66,6 +69,7 @@ compileWithLessParens self lvl = \case
   ListLit exprs ->
     "[" <> intercalate "," (self lvl <$> exprs) <> "]"
   NumLit n -> show n
+  IntLit n -> show n
   StringLit str -> ['"'] <> str <> ['"']
   UnaryOperator opVarid arg ->
     parens $
@@ -91,3 +95,13 @@ compileWithLessParens self lvl = \case
   LocalVar varid -> "_" <> varid
   GlobalVar varid -> varid
   Procedure statements -> compileBlock self (succ lvl) statements
+  Switch on cases defaultCase ->
+    let compileCase (pattern, caseBody) =
+          ["case", self lvl pattern, ":", self lvl caseBody, ";"]
+        compileDefault caseBody =
+          unwords ["default", self lvl caseBody, ";"]
+     in unwords $
+          ["switch", parens $ self lvl on, "{"]
+            ++ (cases >>= compileCase)
+            ++ maybeToList (compileDefault <$> defaultCase)
+            ++ ["}"]

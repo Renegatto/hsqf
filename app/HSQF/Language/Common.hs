@@ -18,13 +18,11 @@ module HSQF.Language.Common
 
     -- * Typeclasses
     PMatch (PPattern, match),
-    PCon (pcon),
+    PCon (type PConstructed, pcon),
     PConstant (PConstanted, pconstant),
     PLift (PLifted),
-    POrd ((#>=), (#<=)),
-    (#==),
-    (#>),
-    (#<),
+    POrd ((#>=), (#<=), (#>), (#<)),
+    PEq ((#==)),
     -- * Newtype
     PNewtype,
     pfromNewtype,
@@ -70,9 +68,9 @@ import SQF
         If,
         ListLit,
         LocalVar,
-        NumLit,
         StringLit,
-        UnaryOperator
+        UnaryOperator,
+        IntLit
       ),
     unNewLine,
   )
@@ -100,7 +98,8 @@ class (PConstanted (PLifted pa) ~ pa) => PLift (pa :: PType) where
   type PLifted pa :: Type
 
 class PCon (a :: PType) where
-  pcon :: a s -> Term c s a
+  type PConstructed a :: PType
+  pcon :: a s -> Term c s (PConstructed a)
 
 class PMatch (a :: PType) where
   type PPattern a :: PType
@@ -119,6 +118,7 @@ newtype PInteger s = MkInteger {runPInteger :: Term 'Expr s PInteger}
 _ = pconstant 2 :: Term c s PInteger
 
 instance PCon PInteger where
+  type PConstructed PInteger = PInteger
   pcon :: PInteger s -> Term c s PInteger
   pcon n = unExpr $ runPInteger n
 
@@ -127,7 +127,7 @@ instance PLift PInteger where type PLifted PInteger = Integer
 instance PConstant Integer where
   type PConstanted Integer = PInteger
   pconstant :: Integer -> Term c s (PConstanted Integer)
-  pconstant n = MkTerm $ \_ -> NumLit $ fromIntegral n
+  pconstant n = MkTerm $ \_ -> IntLit $ fromIntegral n
 
 type PString :: PType
 newtype PString s = MkString {runPString :: Term 'Expr s PString}
@@ -138,6 +138,7 @@ type PVoid :: PType
 newtype PVoid s = MkPVoid {runPVoid :: Term 'Expr s PVoid}
 
 instance PCon PVoid where
+  type PConstructed PVoid = PVoid
   pcon :: PVoid s -> Term c s PVoid
   pcon n = unExpr $ runPVoid n
 
@@ -151,6 +152,7 @@ instance PConstant () where
 _ = pconstant () :: Term c s PVoid
 
 instance PCon PString where
+  type PConstructed PString = PString
   pcon :: PString s -> Term c s PString
   pcon n = unExpr $ runPString n
 
@@ -170,26 +172,27 @@ instance PConstant String where
 pnot :: Term 'Expr s PBool -> Term c s PBool
 pnot = declareUnary "not"
 
-(#==) :: POrd a => Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-a #== b = (a #>= b) #&& (a #<= b)
-
-(#>) :: POrd a => Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-a #> b = (a #>= b) #&& pnot (a #== b)
-
-(#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-(#<) = (pnot .) . (#>)
-
-class POrd (a :: PType) where
-  {-# MINIMAL (#>=), (#<=) #-}
+class PEq (a :: PType) where
+  (#==) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+class PEq a => POrd (a :: PType) where
+  {-# MINIMAL (#>) #-}
+  (#>) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  a #< b = pnot $ (a #== b) #|| (a #> b)
   (#>=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  a #>= b = (a #== b) #|| (a #> b)
   (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  a #<= b = (a #== b) #|| (a #< b)
+
+instance PEq (a :: PType) where 
+  (#==) = declareOperator "=="
 
 instance POrd (a :: PType) where
-  (#>=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-  (#>=) = declareOperator ">="
+  (#>) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#>) = declareOperator ">"
 
-  (#<=) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
-  (#<=) = declareOperator ">="
+  (#<) :: Term 'Expr s a -> Term 'Expr s a -> Term c s PBool
+  (#<) = declareOperator "<"
 
 instance Num (Term 'Expr s PInteger) where
   (+) :: Term 'Expr s PInteger -> Term 'Expr s PInteger -> Term 'Expr s PInteger
@@ -209,6 +212,7 @@ type PBool :: PType
 data PBool s = PTrue | PFalse
 
 instance PCon PBool where
+  type PConstructed PBool = PBool
   pcon :: PBool s -> Term c s PBool
   pcon PTrue = MkTerm $ \_ -> GlobalVar "true"
   pcon PFalse = MkTerm $ \_ -> GlobalVar "false"

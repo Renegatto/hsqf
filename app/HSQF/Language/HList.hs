@@ -26,14 +26,14 @@ import GHC.TypeLits (natVal)
 import GHC.TypeNats (KnownNat, type (-))
 import HSQF.Language.Common
   ( PBool (PTrue),
-    PCon (pcon),
-    PConstant (PConstanted, pconstant),
+    PCon (pcon, type PConstructed),
+    PConstant (pconstant, type PConstanted),
     PInteger,
     PLift (PLifted),
-    PMatch (PPattern,match),
+    PMatch (PPattern, match),
     PString,
     PType,
-    Scope (Expr,Stat),
+    Scope (Expr, Stat),
     Term,
     declareOperator,
     mkVar,
@@ -75,6 +75,7 @@ ppairToList :: Term c s (PPair a b) -> Term c s (PHList '[a, b])
 ppairToList = punsafeCoerce
 
 instance PCon (PPair a b) where
+  type PConstructed (PPair a b) = PPair a b
   pcon :: PPair a b s -> Term c s (PPair a b)
   pcon (MkPPair a b) = MkTerm $ \lvl ->
     ListLit [runTerm a lvl, runTerm b lvl]

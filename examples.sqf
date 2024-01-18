@@ -1,3 +1,20 @@
+private _var0 = [0, ([\"Polar\"] + ([270] + []))];
+private _var1 = (_var0 select 1);
+switch ((_var0 select 0)) {
+    case 0 : {
+        (_var1 select 1);
+    };
+    case 1 : {
+        (_var1 select 0);
+    };
+    case 2 : {
+        200;
+    };
+    default: {
+        (throw \"No such case Id found\");
+    };
+};
+
 private _reg = {
     params call [_arty];
     private _reload = {
@@ -15,6 +32,7 @@ private _var0 = ({
         (params) call (["var3"]);
         (setvehicleAmmo) call (([_var3]) + (([1.0]) + ([])));
     });
-    private _var3 = (_var1); (addEventHandler) call (([_var3]) + ((["fired"]) + (([_var2]) + ([]))));
+    private _var3 = (_var1);
+    (addEventHandler) call (([_var3]) + ((["fired"]) + (([_var2]) + ([]))));
 });
 (forEach) call (([_var0]) + (([(units) call (this)]) + ([])));

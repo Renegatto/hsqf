@@ -5,10 +5,10 @@ module HSQF.Language.List
     pempty,
     pconcat,
     psingleton,
-  )
+  pselect)
 where
 
-import HSQF.Language.Common (declareOperator)
+import HSQF.Language.Common (declareOperator, PInteger)
 import HSQF.Language.Definition (PType, Scope (Expr), Term (MkTerm, runTerm))
 import SQF (SQF (ListLit))
 
@@ -17,6 +17,9 @@ newtype PList (a :: PType) s = MkPList
 
 (#::) :: Term 'Expr s a -> Term 'Expr s (PList a) -> Term c s (PList a)
 (#::) = pcons
+
+pselect :: Term 'Expr s (PList a) -> Term 'Expr s PInteger -> Term c s a
+pselect = declareOperator "#"
 
 pconcat ::
   Term 'Expr s (PList a) ->

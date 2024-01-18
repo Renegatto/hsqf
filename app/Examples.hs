@@ -1,5 +1,6 @@
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Examples
   ( someResult,
@@ -7,6 +8,9 @@ module Examples
     someProcedure,
     thisPlayer,
     infAmmoForEveryUnitOf,
+    compiledInfAmmo,
+    compiledRollWeight,
+    philadelfia,
   )
 where
 
@@ -24,14 +28,16 @@ import HSQF.Api
 import HSQF.Language.Monadic qualified as P
 import HSQF.Prelude
 import HSQF.Language.Record
-
+import qualified GHC.Generics as GHC
+import Generics.SOP (Generic)
+import HSQF.Language.Sum (GPCon, GPMatch, DeriveGenerically (MkDeriveGenerically))
 
 type LAMBSState :: [RecordField]
 type LAMBSState =
-   '[ "dangerLevel" ':= PInteger
-    , "autoAdjustment" ':= PBool
-    , "targets" ':= PList PUnit 
-    ]
+  '[ "dangerLevel" ':= PInteger,
+     "autoAdjustment" ':= PBool,
+     "targets" ':= PList PUnit
+   ]
 
 type PLAMBSState :: PType
 newtype PLAMBSState s = MkPLambsState
@@ -107,11 +113,76 @@ infAmmoForEveryUnitOf player = P.do
       artyAsVehicle `addEventHandler` (event #: reloadAmmo #: pnil)
   giveInfAmmo `forEach` units player
 
-compiled :: String
-compiled = compile $ infAmmoForEveryUnitOf thisPlayer
+compiledInfAmmo :: String
+compiledInfAmmo = compile $ infAmmoForEveryUnitOf thisPlayer
 
 {-
->>> compiled
+>>> compiledInfAmmo
 "private _var0 = \"fired\"; private _var1 = {  (params [\"_var2\"]);  private _var3 = {    (params [\"_var4\"]);    (_var4 setvehicleammo 1.0); };   private _var4 = _var2;   (_var4 addEventHandler ([_var0] + ([_var3] + []))); }; (_var1 forEach (units this));"
 
 -}
+
+-- * Rolls
+
+compiledRollWeight :: String
+compiledRollWeight = compile $ rollWeight $ pcon polar
+
+{-
+>>> compiledRollWeight
+"private _var0 = [0,([\"Polar\"] + ([270] + []))]; private _var1 = (_var0 select 1); switch ((_var0 select 0)) { case 0 : {  (_var1 select 1); } ; case 1 : {  (_var1 select 0); } ; case 2 : {  200; } ; default: {  (throw \"No such case Id found\"); } ; };"
+
+-}
+
+data Roll (s :: S)
+  = Baked
+      ( Term
+          'Expr
+          s
+          ( PRecord
+              '[ "name" ':= PString,
+                 "weightOfSingle" ':= PInteger
+               ]
+          )
+      )
+  | NonBaked
+      ( Term
+          'Expr
+          s
+          ( PRecord
+              '["weight" ':= PInteger]
+          )
+      )
+  | HandMade
+      ( Term
+          'Expr
+          s
+          ( PRecord
+              '["name" ':= PString]
+          )
+      )
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic, GPCon, GPMatch)
+  deriving PMatch via DeriveGenerically Roll
+  deriving PCon via DeriveGenerically Roll
+
+philadelfia :: Roll s
+philadelfia =
+  HandMade
+    . pconsRecord (pconstant "Philadelfia")
+    $ pemptyRecord
+
+polar :: Roll s
+polar =
+  Baked
+    . pconsRecord (pconstant "Polar")
+    . pconsRecord 270
+    $ pemptyRecord
+
+rollWeight :: Term 'Expr s Roll -> Term 'Stat s PInteger
+rollWeight roll = match roll $ \case
+  Baked info -> get @"weightOfSingle" info
+  NonBaked info -> get @"weight" info
+  HandMade _ -> pconstant @Integer 200
+
+polarRollWeight :: Term 'Stat s PInteger
+polarRollWeight = rollWeight (pcon polar)

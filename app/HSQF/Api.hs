@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module HSQF.Api
   ( PObject,
     PUnit,
@@ -46,6 +48,7 @@ data PEvent s
   | PHealed
 
 instance PCon PEvent where
+  type PConstructed PEvent = PEvent
   pcon PFired = MkTerm $ \_ -> StringLit "fired"
   pcon PHealed = MkTerm $ \_ -> StringLit "healed"
 

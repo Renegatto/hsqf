@@ -7,6 +7,7 @@
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module HSQF.Language.Record
   ( PRecord
   , RecordField (type (:=))
@@ -22,6 +23,8 @@ import GHC.TypeLits (Symbol, Nat, type (+), TypeError, KnownNat, ErrorMessage (T
 import HSQF.Language.HList (Nth)
 import qualified HSQF.Language.Monadic as P
 import Data.Kind (Type)
+import qualified GHC.Generics as GHC
+import Generics.SOP (Generic)
 
 type RecordField :: Type
 data RecordField = Symbol := PType
@@ -43,6 +46,7 @@ data LabeledTerm label a s = MkLabeledTerm
   { runLabeledTerm :: Term 'Expr s a }
 
 instance PCon (LabeledTerm label a) where
+  type PConstructed (LabeledTerm label a) = (LabeledTerm label a)
   pcon = punsafeCoerce @a @(LabeledTerm label a) . runLabeledTerm 
 instance PMatch (LabeledTerm label a) where
   type PPattern (LabeledTerm label a) = (LabeledTerm label a)
@@ -52,6 +56,8 @@ instance PMatch (LabeledTerm label a) where
 type PRecord :: [RecordField] -> PType
 newtype PRecord fields s = MkPRecord
   (Term 'Expr s (PHList (UnRecordFields fields)))
+  deriving stock GHC.Generic
+  deriving anyclass Generic
 
 plabelTerm ::
   forall label a c s.
@@ -134,5 +140,3 @@ type family IndexOf label xs n = n' where
   IndexOf label (LabeledTerm label a : xs) n = n
   IndexOf label (LabeledTerm _ _ : xs) n = IndexOf label xs (n + 1)
   IndexOf _ _ _ = TypeError ('Text "There is no such label")
-
-
